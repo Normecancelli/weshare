@@ -58,6 +58,10 @@ CREATE INDEX idx_products_attivo ON products(attivo);
 -- ============================================
 -- CUSTOMERS (Clienti)
 -- ============================================
+-- Add new fields to existing profiles table (partner data)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS codice_attivita TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS diamante_riferimento TEXT DEFAULT 'non_lo_so';
+
 CREATE TABLE customers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   partner_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -65,8 +69,6 @@ CREATE TABLE customers (
   cognome TEXT,
   telefono TEXT,
   email TEXT,
-  codice_attivita TEXT,
-  diamante_riferimento TEXT DEFAULT 'non_lo_so',
   indirizzo TEXT,
   citta TEXT,
   note TEXT,

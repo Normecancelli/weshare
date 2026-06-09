@@ -22,8 +22,6 @@ export interface Customer {
   cognome: string | null;
   telefono: string | null;
   email: string | null;
-  codice_attivita: string | null;
-  diamante_riferimento: string | null;
   indirizzo: string | null;
   citta: string | null;
   note: string | null;

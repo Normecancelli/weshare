@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { nome, cognome, telefono, email, codice_attivita, diamante_riferimento, indirizzo, citta, note } = body;
+    const { nome, cognome, telefono, email, indirizzo, citta, note } = body;
 
     if (!nome || !nome.trim()) {
       return NextResponse.json(
@@ -65,8 +65,6 @@ export async function POST(request: NextRequest) {
         cognome: cognome?.trim() || null,
         telefono: telefono?.trim() || null,
         email: email?.trim() || null,
-        codice_attivita: codice_attivita?.trim() || null,
-        diamante_riferimento: diamante_riferimento?.trim() || "non_lo_so",
         indirizzo: indirizzo?.trim() || null,
         citta: citta?.trim() || null,
         note: note?.trim() || null,

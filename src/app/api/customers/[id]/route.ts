@@ -57,8 +57,6 @@ export async function PUT(
       "cognome",
       "telefono",
       "email",
-      "codice_attivita",
-      "diamante_riferimento",
       "indirizzo",
       "citta",
       "note",

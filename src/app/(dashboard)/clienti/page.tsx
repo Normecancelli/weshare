@@ -13,8 +13,6 @@ export default function ClientiPage() {
     cognome: "",
     telefono: "",
     email: "",
-    codice_attivita: "",
-    diamante_riferimento: "non_lo_so",
     citta: "",
   });
   const [saving, setSaving] = useState(false);
@@ -43,7 +41,7 @@ export default function ClientiPage() {
     });
 
     if (res.ok) {
-      setFormData({ nome: "", cognome: "", telefono: "", email: "", codice_attivita: "", diamante_riferimento: "non_lo_so", citta: "" });
+      setFormData({ nome: "", cognome: "", telefono: "", email: "", citta: "" });
       setShowForm(false);
       fetchCustomers();
     }
@@ -141,25 +139,6 @@ export default function ClientiPage() {
             />
             <input
               type="text"
-              placeholder="Codice Attivita Amway"
-              value={formData.codice_attivita}
-              onChange={(e) =>
-                setFormData({ ...formData, codice_attivita: e.target.value })
-              }
-              className="px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-            />
-            <select
-              value={formData.diamante_riferimento}
-              onChange={(e) =>
-                setFormData({ ...formData, diamante_riferimento: e.target.value })
-              }
-              className="px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-            >
-              <option value="non_lo_so">Diamante di riferimento — Non lo so</option>
-              <option value="da_inserire">Lo inseriro nelle impostazioni</option>
-            </select>
-            <input
-              type="text"
               placeholder="Citta"
               value={formData.citta}
               onChange={(e) =>
@@ -210,11 +189,6 @@ export default function ClientiPage() {
                 {c.telefono && <span>{c.telefono}</span>}
                 {c.email && <span>{c.email}</span>}
                 {c.citta && <span>{c.citta}</span>}
-                {c.codice_attivita && (
-                  <span className="text-accent-hover font-medium">
-                    cod. {c.codice_attivita}
-                  </span>
-                )}
               </div>
             </div>
             {c.telefono && (
