@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 type ImportStatus = "idle" | "uploading" | "success" | "error";
 
@@ -13,12 +14,51 @@ interface ImportResult {
 }
 
 export default function ProdottiImportPage() {
+  const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [status, setStatus] = useState<ImportStatus>("idle");
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        setIsAdmin(!!d.isAdmin);
+        setAuthChecked(true);
+      })
+      .catch(() => setAuthChecked(true));
+  }, []);
+
+  if (!authChecked) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="max-w-md mx-auto py-12 text-center">
+        <p className="text-3xl mb-3">🔒</p>
+        <h2 className="text-xl font-bold mb-2">Area riservata</h2>
+        <p className="text-text-secondary text-sm mb-5">
+          Solo un amministratore può aggiornare il listino prezzi. Contatta il referente Amway Partner del tuo gruppo.
+        </p>
+        <button
+          onClick={() => router.push("/prodotti")}
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
+        >
+          Torna al catalogo
+        </button>
+      </div>
+    );
+  }
 
   async function handleFile(file: File) {
     setFileName(file.name);

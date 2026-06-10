@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parsePriceListExcel } from "@/lib/import/price-list-parser";
+import { getUserRole, isAdminRole } from "@/lib/auth/roles";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -11,6 +12,17 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+  }
+
+  const role = await getUserRole(supabase, user.id);
+  if (!isAdminRole(role)) {
+    return NextResponse.json(
+      {
+        error:
+          "Solo un amministratore può aggiornare il listino. Contatta il referente Amway Partner.",
+      },
+      { status: 403 },
+    );
   }
 
   try {

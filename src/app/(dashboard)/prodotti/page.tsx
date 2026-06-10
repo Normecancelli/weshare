@@ -9,9 +9,14 @@ export default function ProdottiPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     fetchProducts();
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(!!d.isAdmin))
+      .catch(() => setIsAdmin(false));
   }, []);
 
   async function fetchProducts() {
@@ -55,14 +60,18 @@ export default function ProdottiPage() {
             Nessun prodotto nel catalogo
           </p>
           <p className="text-text-secondary text-sm mb-4">
-            Importa il listino prezzi Amway per iniziare.
+            {isAdmin
+              ? "Importa il listino prezzi Amway per iniziare."
+              : "Il listino prezzi non è ancora stato caricato. Contatta il referente Amway Partner."}
           </p>
-          <a
-            href="/prodotti/import"
-            className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
-          >
-            Importa listino
-          </a>
+          {isAdmin && (
+            <a
+              href="/prodotti/import"
+              className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
+            >
+              Importa listino
+            </a>
+          )}
         </div>
       </div>
     );
@@ -79,12 +88,14 @@ export default function ProdottiPage() {
             {products.length} prodotti Amway
           </p>
         </div>
-        <a
-          href="/prodotti/import"
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
-        >
-          Aggiorna listino
-        </a>
+        {isAdmin && (
+          <a
+            href="/prodotti/import"
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
+          >
+            Aggiorna listino
+          </a>
+        )}
       </div>
 
       {/* Filters */}
