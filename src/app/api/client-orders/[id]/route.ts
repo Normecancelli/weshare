@@ -93,3 +93,49 @@ export async function PUT(
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const supabase = await createClient();
+  const { id } = await params;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+  }
+
+  const { data: order } = await supabase
+    .from("client_orders")
+    .select("id, stato")
+    .eq("id", id)
+    .eq("partner_id", user.id)
+    .single();
+
+  if (!order) {
+    return NextResponse.json({ error: "Ordine non trovato" }, { status: 404 });
+  }
+
+  if (order.stato !== "bozza" && order.stato !== "annullato") {
+    return NextResponse.json(
+      { error: "Solo le bozze o gli ordini annullati possono essere eliminati" },
+      { status: 409 }
+    );
+  }
+
+  const { error } = await supabase
+    .from("client_orders")
+    .delete()
+    .eq("id", id)
+    .eq("partner_id", user.id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
