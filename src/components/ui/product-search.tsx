@@ -23,13 +23,15 @@ export function ProductSearch({
   const filtered =
     query.trim().length < 1
       ? []
-      : products
-          .filter(
-            (p) =>
-              p.descrizione.toLowerCase().includes(query.toLowerCase()) ||
-              p.codice_amway.includes(query)
-          )
-          .slice(0, 8);
+      : (() => {
+          const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+          return products
+            .filter((p) => {
+              const haystack = `${p.descrizione.toLowerCase()} ${p.codice_amway.toLowerCase()}`;
+              return tokens.every((t) => haystack.includes(t));
+            })
+            .slice(0, 8);
+        })();
 
   useEffect(() => {
     setHighlighted(0);

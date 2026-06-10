@@ -24,12 +24,13 @@ export default function ProdottiPage() {
   }
 
   const filtered = products.filter((p) => {
-    const matchSearch =
-      !search.trim() ||
-      p.descrizione.toLowerCase().includes(search.toLowerCase()) ||
-      p.codice_amway.includes(search);
     const matchCat = !categoriaFiltro || p.categoria === categoriaFiltro;
-    return matchSearch && matchCat;
+    if (!matchCat) return false;
+    const q = search.trim();
+    if (!q) return true;
+    const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const haystack = `${p.descrizione.toLowerCase()} ${p.codice_amway.toLowerCase()}`;
+    return tokens.every((t) => haystack.includes(t));
   });
 
   if (loading) {
