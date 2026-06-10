@@ -3,3 +3,7 @@ node_modules
 .env.local
 .env
 .superpowers/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+.vercel
+test-parser.mjs
