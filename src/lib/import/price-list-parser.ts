@@ -20,24 +20,70 @@ export interface ParsedPriceList {
   categories: string[];
 }
 
+// Column offsets per layout. Some rows have the code in B (standard),
+// others have it in A (shifted -1). All other fields shift accordingly.
+type Layout = {
+  codice: number;
+  descrizione: number;
+  contenuto: number;
+  prezzo_cliente: number;
+  provvigione: number;
+  prezzo_partner: number;
+  prezzo_unita: number;
+  punti_vp: number;
+  volume_vv: number;
+};
+
+const LAYOUT_STANDARD: Layout = {
+  codice: 1,         // B
+  descrizione: 5,    // F
+  contenuto: 13,     // N
+  prezzo_cliente: 16, // Q
+  provvigione: 19,   // T
+  prezzo_partner: 23, // X
+  prezzo_unita: 26,  // AA
+  punti_vp: 29,      // AD
+  volume_vv: 32,     // AG
+};
+
+const LAYOUT_SHIFTED: Layout = {
+  codice: 0,         // A
+  descrizione: 4,    // E
+  contenuto: 12,     // M
+  prezzo_cliente: 15, // P
+  provvigione: 18,   // S
+  prezzo_partner: 22, // W
+  prezzo_unita: 25,  // Z
+  punti_vp: 28,      // AC
+  volume_vv: 31,     // AF
+};
+
+// Read a code cell preserving zero-padding from the cell's number format.
+// E.g. value=1, format='0000' → "0001" (historic Amway codes like L.O.C.).
+function readCode(sheet: XLSX.WorkSheet, rowIdx: number, colIdx: number): string | null {
+  const cell = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: colIdx })];
+  if (!cell || cell.v == null) return null;
+  const raw = String(cell.v).trim();
+  if (!/^\d+$/.test(raw)) return null;
+  const formatted = typeof cell.w === "string" ? cell.w.trim() : "";
+  return formatted && /^\d+$/.test(formatted) ? formatted : raw;
+}
+
+function detectLayout(sheet: XLSX.WorkSheet, rowIdx: number): Layout | null {
+  if (readCode(sheet, rowIdx, LAYOUT_STANDARD.codice)) return LAYOUT_STANDARD;
+  if (readCode(sheet, rowIdx, LAYOUT_SHIFTED.codice)) return LAYOUT_SHIFTED;
+  return null;
+}
+
 /**
  * Parse the Amway price list Excel file.
  *
  * The file has a non-standard layout:
  * - Rows 1-55: title page and index (ignored)
  * - Row 56: column headers
- * - Row 57+: mix of category rows (text in A, no code in B) and product rows (code in B)
- *
- * Column mapping (1-indexed Excel columns):
- *   B (col 2)  -> codice_amway
- *   F (col 6)  -> descrizione
- *   N (col 14) -> contenuto
- *   Q (col 17) -> prezzo_cliente
- *   T (col 20) -> provvigione
- *   X (col 24) -> prezzo_partner
- *   AA (col 27) -> prezzo_unita
- *   AD (col 30) -> punti_vp
- *   AG (col 33) -> volume_vv
+ * - Row 57+: mix of category rows (text in A, no code) and product rows
+ *   with TWO possible layouts: standard (code in B) and shifted (code in A,
+ *   all other fields shifted -1 column).
  */
 export function parsePriceListExcel(buffer: ArrayBuffer): ParsedPriceList {
   const workbook = XLSX.read(buffer, { type: "array" });
@@ -53,47 +99,38 @@ export function parsePriceListExcel(buffer: ArrayBuffer): ParsedPriceList {
   const categoriesSet = new Set<string>();
   let currentCategory = "";
 
-  // Start from row 57 (index 56, 0-based) — after the header row at index 55
   for (let rowIdx = 56; rowIdx <= range.e.r; rowIdx++) {
-    const cellA = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 0 })]?.v;
-    const cellB = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 1 })]?.v;
+    const layout = detectLayout(sheet, rowIdx);
 
-    // Category row: text in A, no numeric code in B
-    if (cellA && typeof cellA === "string" && cellA.trim().length > 2) {
-      if (!cellB || !String(cellB).trim().match(/^\d+$/)) {
+    if (!layout) {
+      // Category row: text in A, no numeric code anywhere
+      const cellA = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 0 })]?.v;
+      if (typeof cellA === "string" && cellA.trim().length > 2) {
         currentCategory = cellA.trim();
         categoriesSet.add(currentCategory);
-        continue;
       }
+      continue;
     }
 
-    // Product row: numeric code in B
-    if (!cellB) continue;
-    const codeStr = String(cellB).trim();
-    if (!codeStr.match(/^\d+$/)) continue;
+    const codice = readCode(sheet, rowIdx, layout.codice);
+    if (!codice) continue;
 
-    const cellF = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 5 })]?.v;
-    if (!cellF) continue; // Skip rows with code but no description
+    const descrCell = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: layout.descrizione })]?.v;
+    if (!descrCell) continue;
 
-    const cellN = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 13 })]?.v;
-    const cellQ = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 16 })]?.v;
-    const cellT = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 19 })]?.v;
-    const cellX = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 23 })]?.v;
-    const cellAA = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 26 })]?.v;
-    const cellAD = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 29 })]?.v;
-    const cellAG = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 32 })]?.v;
+    const read = (col: number) => sheet[XLSX.utils.encode_cell({ r: rowIdx, c: col })]?.v;
 
     products.push({
-      codice_amway: codeStr,
-      descrizione: String(cellF).trim(),
+      codice_amway: codice,
+      descrizione: String(descrCell).trim(),
       categoria: currentCategory,
-      contenuto: cellN ? String(cellN).trim() : null,
-      prezzo_cliente: parseNumericValue(cellQ),
-      prezzo_partner: parseNumericValue(cellX),
-      provvigione: parseNumericValue(cellT),
-      prezzo_unita: cellAA ? String(cellAA).trim() : null,
-      punti_vp: parseNumericValue(cellAD),
-      volume_vv: parseNumericValue(cellAG),
+      contenuto: read(layout.contenuto) != null ? String(read(layout.contenuto)).trim() : null,
+      prezzo_cliente: parseNumericValue(read(layout.prezzo_cliente)),
+      prezzo_partner: parseNumericValue(read(layout.prezzo_partner)),
+      provvigione: parseNumericValue(read(layout.provvigione)),
+      prezzo_unita: read(layout.prezzo_unita) != null ? String(read(layout.prezzo_unita)).trim() : null,
+      punti_vp: parseNumericValue(read(layout.punti_vp)),
+      volume_vv: parseNumericValue(read(layout.volume_vv)),
     });
   }
 
