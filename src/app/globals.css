@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  /* Fondali */
+  --bg-main: #FBF8F3;
+  --bg-card: #FFFEFB;
+  --bg-section: #F5EDE4;
+
+  /* Testi */
+  --text-primary: #3D3229;
+  --text-secondary: #8C7E72;
+  --text-gentle: #B8ADA2;
+
+  /* Accent — Gold */
+  --accent: #E8A020;
+  --accent-hover: #CC8A0E;
+  --accent-glow: #FEF0D5;
+
+  /* Emozione — Corallo */
+  --coral: #E0917E;
+  --coral-soft: #FBEAE5;
+
+  /* Emozione — Lavanda */
+  --lavender: #B8A9D4;
+  --lavender-soft: #F0ECF6;
+
+  /* Semantici */
+  --success: #7DB89B;
+  --warning: #E8A020;
+  --error: #CD6B6B;
+  --info: #B8A9D4;
+
+  /* Bordi */
+  --border: #EDE7DF;
+  --divider: #F3EDE6;
+
+  /* Mapping Tailwind */
+  --background: var(--bg-main);
+  --foreground: var(--text-primary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Palette completa accessibile da Tailwind (bg-accent, text-coral, etc.) */
+  --color-bg-main: var(--bg-main);
+  --color-bg-card: var(--bg-card);
+  --color-bg-section: var(--bg-section);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-glow: var(--accent-glow);
+
+  --color-coral: var(--coral);
+  --color-coral-soft: var(--coral-soft);
+
+  --color-lavender: var(--lavender);
+  --color-lavender-soft: var(--lavender-soft);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  --color-border: var(--border);
+  --color-divider: var(--divider);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-gentle: var(--text-gentle);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

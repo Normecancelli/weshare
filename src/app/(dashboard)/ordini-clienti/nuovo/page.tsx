@@ -23,6 +23,9 @@ export default function NuovoOrdinePage() {
   const [canale, setCanale] = useState<OrderChannel>("presenza");
   const [items, setItems] = useState<CartItem[]>([]);
   const [note, setNote] = useState("");
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAdd, setQuickAdd] = useState({ nome: "", cognome: "", telefono: "" });
+  const [quickAddSaving, setQuickAddSaving] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -116,6 +119,26 @@ export default function NuovoOrdinePage() {
     setSaving(false);
   }
 
+  async function handleQuickAddCustomer(e: React.FormEvent) {
+    e.preventDefault();
+    if (!quickAdd.nome.trim()) return;
+    setQuickAddSaving(true);
+    const res = await fetch("/api/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(quickAdd),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setCustomers((prev) => [...prev, data.customer]);
+      setSelectedCustomer(data.customer);
+      setShowQuickAdd(false);
+      setShowCustomerList(false);
+      setQuickAdd({ nome: "", cognome: "", telefono: "" });
+    }
+    setQuickAddSaving(false);
+  }
+
   const filteredCustomers = customerSearch.trim()
     ? customers.filter(
         (c) =>
@@ -193,33 +216,88 @@ export default function NuovoOrdinePage() {
               className="w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
             />
             {showCustomerList && (
-              <div className="mt-2 max-h-48 overflow-y-auto border border-border rounded-xl">
-                {filteredCustomers.length === 0 ? (
-                  <div className="p-3 text-center text-sm text-text-secondary">
-                    Nessun cliente trovato
-                  </div>
-                ) : (
-                  filteredCustomers.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => {
-                        setSelectedCustomer(c);
-                        setShowCustomerList(false);
-                        setCustomerSearch("");
-                      }}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent-glow transition-colors border-b border-divider last:border-b-0"
-                    >
-                      <span className="font-semibold">{c.nome}</span>{" "}
-                      {c.cognome}
-                      {c.telefono && (
-                        <span className="text-text-secondary ml-2">
-                          {c.telefono}
-                        </span>
-                      )}
-                    </button>
-                  ))
-                )}
+              <div className="mt-2 border border-border rounded-xl">
+                <div className="max-h-48 overflow-y-auto">
+                  {filteredCustomers.length === 0 ? (
+                    <div className="p-3 text-center text-sm text-text-secondary">
+                      Nessun cliente trovato
+                    </div>
+                  ) : (
+                    filteredCustomers.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => {
+                          setSelectedCustomer(c);
+                          setShowCustomerList(false);
+                          setCustomerSearch("");
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent-glow transition-colors border-b border-divider last:border-b-0"
+                      >
+                        <span className="font-semibold">{c.nome}</span>{" "}
+                        {c.cognome}
+                        {c.telefono && (
+                          <span className="text-text-secondary ml-2">
+                            {c.telefono}
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAdd(true)}
+                  className="w-full px-4 py-2.5 text-sm font-semibold text-accent hover:bg-accent-glow transition-colors border-t border-border text-center"
+                >
+                  + Nuovo cliente veloce
+                </button>
               </div>
+            )}
+
+            {showQuickAdd && (
+              <form onSubmit={handleQuickAddCustomer} className="mt-3 p-3 bg-bg-main rounded-xl border border-accent/30 space-y-2">
+                <div className="text-xs font-semibold text-accent mb-1">Nuovo cliente</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nome *"
+                    value={quickAdd.nome}
+                    onChange={(e) => setQuickAdd({ ...quickAdd, nome: e.target.value })}
+                    required
+                    className="px-3 py-2 rounded-lg text-sm border border-border bg-bg-card focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cognome"
+                    value={quickAdd.cognome}
+                    onChange={(e) => setQuickAdd({ ...quickAdd, cognome: e.target.value })}
+                    className="px-3 py-2 rounded-lg text-sm border border-border bg-bg-card focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Cellulare"
+                    value={quickAdd.telefono}
+                    onChange={(e) => setQuickAdd({ ...quickAdd, telefono: e.target.value })}
+                    className="px-3 py-2 rounded-lg text-sm border border-border bg-bg-card focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={quickAddSaving || !quickAdd.nome.trim()}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all disabled:opacity-50"
+                  >
+                    {quickAddSaving ? "..." : "Crea e seleziona"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickAdd(false)}
+                    className="px-4 py-2 rounded-lg text-sm text-text-secondary hover:bg-bg-section transition-all"
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         )}

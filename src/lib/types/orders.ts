@@ -28,6 +28,14 @@ export interface Customer {
   created_at: string;
 }
 
+export interface CustomerDate {
+  id: string;
+  customer_id: string;
+  data: string;
+  descrizione: string;
+  created_at: string;
+}
+
 export type OrderStatus = "bozza" | "confermato" | "in_gruppo" | "completato" | "annullato";
 export type OrderChannel = "whatsapp" | "presenza" | "telefono";
 export type CartType = "personale" | "non_registrato" | "programmato";
