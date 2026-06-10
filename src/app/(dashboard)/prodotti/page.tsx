@@ -131,14 +131,13 @@ export default function ProdottiPage() {
         {filtered.length} risultati
       </div>
 
-      {/* Product grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      {/* MOBILE: card grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:hidden">
         {filtered.map((p) => (
           <div
             key={p.id}
             className="bg-bg-card border border-border rounded-xl p-3.5 flex flex-col hover:shadow-md hover:border-accent/30 transition-all"
           >
-            {/* Header: descrizione + meta */}
             <div className="flex-1 min-w-0 mb-3">
               <div
                 className="font-semibold text-sm text-text-primary leading-snug line-clamp-2"
@@ -161,8 +160,6 @@ export default function ProdottiPage() {
                 </div>
               )}
             </div>
-
-            {/* Footer: prezzi */}
             <div className="flex items-baseline justify-between pt-2.5 border-t border-divider gap-3">
               <div className="min-w-0">
                 <div className="text-lg font-bold text-text-primary leading-none">
@@ -186,6 +183,63 @@ export default function ProdottiPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* DESKTOP: spreadsheet table */}
+      <div className="hidden md:block bg-bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-bg-section border-b border-border">
+              <tr className="text-left text-[11px] uppercase tracking-wider text-text-secondary">
+                <th className="px-3 py-2.5 font-semibold w-20">Codice</th>
+                <th className="px-3 py-2.5 font-semibold">Descrizione</th>
+                <th className="px-3 py-2.5 font-semibold w-32 hidden lg:table-cell">Categoria</th>
+                <th className="px-3 py-2.5 font-semibold w-20 hidden lg:table-cell">Contenuto</th>
+                <th className="px-3 py-2.5 font-semibold text-right w-24">Cliente</th>
+                <th className="px-3 py-2.5 font-semibold text-right w-24">Partner</th>
+                <th className="px-3 py-2.5 font-semibold text-right w-16">VP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p, i) => (
+                <tr
+                  key={p.id}
+                  className={`border-b border-divider last:border-b-0 hover:bg-bg-section/60 transition-colors ${
+                    i % 2 === 0 ? "bg-transparent" : "bg-bg-main/40"
+                  }`}
+                >
+                  <td className="px-3 py-2.5 font-mono text-xs text-text-secondary whitespace-nowrap">
+                    {p.codice_amway}
+                  </td>
+                  <td className="px-3 py-2.5 font-medium text-text-primary">
+                    <div className="leading-snug" title={p.descrizione}>
+                      {p.descrizione}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-text-secondary hidden lg:table-cell">
+                    <span className="truncate inline-block max-w-full" title={p.categoria || ""}>
+                      {p.categoria || "—"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-xs text-text-secondary hidden lg:table-cell whitespace-nowrap">
+                    {p.contenuto || "—"}
+                  </td>
+                  <td className="px-3 py-2.5 font-semibold text-right text-text-primary whitespace-nowrap">
+                    €{p.prezzo_cliente.toFixed(2)}
+                  </td>
+                  <td className="px-3 py-2.5 font-semibold text-right text-accent-hover whitespace-nowrap">
+                    €{p.prezzo_partner.toFixed(2)}
+                  </td>
+                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                    <span className="bg-accent-glow text-accent-hover text-[11px] font-bold px-2 py-0.5 rounded-md">
+                      {p.punti_vp.toFixed(2)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
