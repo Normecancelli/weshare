@@ -132,46 +132,56 @@ export default function ProdottiPage() {
       </div>
 
       {/* Product grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {filtered.map((p) => (
           <div
             key={p.id}
-            className="bg-bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all"
+            className="bg-bg-card border border-border rounded-xl p-3.5 flex flex-col hover:shadow-md hover:border-accent/30 transition-all"
           >
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm text-text-primary truncate">
-                  {p.descrizione}
-                </div>
-                <div className="text-xs text-text-secondary mt-0.5">
-                  cod. {p.codice_amway}
-                  {p.contenuto && ` · ${p.contenuto}`}
-                </div>
+            {/* Header: descrizione + meta */}
+            <div className="flex-1 min-w-0 mb-3">
+              <div
+                className="font-semibold text-sm text-text-primary leading-snug line-clamp-2"
+                title={p.descrizione}
+              >
+                {p.descrizione}
               </div>
+              <div className="text-[11px] text-text-gentle mt-1 flex items-center gap-1.5 flex-wrap">
+                <span className="font-mono">{p.codice_amway}</span>
+                {p.contenuto && (
+                  <>
+                    <span>·</span>
+                    <span>{p.contenuto}</span>
+                  </>
+                )}
+              </div>
+              {p.categoria && (
+                <div className="inline-block text-[10px] text-text-secondary bg-bg-section px-2 py-0.5 rounded-full mt-2 max-w-full truncate">
+                  {p.categoria}
+                </div>
+              )}
             </div>
-            {p.categoria && (
-              <div className="text-[10px] text-text-gentle mb-2 truncate">
-                {p.categoria}
-              </div>
-            )}
-            <div className="flex justify-between items-end pt-2 border-t border-divider">
-              <div>
-                <div className="text-xs text-text-secondary">Prezzo cliente</div>
-                <div className="font-bold text-text-primary">
-                  {"€"}{p.prezzo_cliente.toFixed(2)}
+
+            {/* Footer: prezzi */}
+            <div className="flex items-baseline justify-between pt-2.5 border-t border-divider gap-3">
+              <div className="min-w-0">
+                <div className="text-lg font-bold text-text-primary leading-none">
+                  €{p.prezzo_cliente.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-text-gentle mt-0.5 uppercase tracking-wide">
+                  cliente
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-xs text-text-secondary">Prezzo partner</div>
-                <div className="font-bold text-accent-hover">
-                  {"€"}{p.prezzo_partner.toFixed(2)}
+              <div className="text-right min-w-0">
+                <div className="text-sm font-semibold text-accent-hover leading-none">
+                  €{p.prezzo_partner.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-text-gentle mt-0.5 uppercase tracking-wide">
+                  partner
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-xs text-text-secondary">VP</div>
-                <div className="font-bold text-text-primary">
-                  {p.punti_vp.toFixed(2)}
-                </div>
+              <div className="shrink-0 bg-accent-glow text-accent-hover text-xs font-bold px-2 py-1 rounded-md whitespace-nowrap">
+                {p.punti_vp.toFixed(2)} VP
               </div>
             </div>
           </div>
