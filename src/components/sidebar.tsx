@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const menuSections = [
   {
@@ -51,12 +52,28 @@ type SidebarProps = {
 
 export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
   const [active, setActive] = useState("Dashboard");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? null);
+    });
+  }, [supabase]);
 
   function handleNav(name: string, href: string) {
     setActive(name);
     router.push(href);
     onCloseMobile?.();
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
   }
 
   return (
@@ -129,10 +146,29 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
           ))}
         </div>
 
-        <div className="px-4 mt-auto">
+        <div className="px-4 mt-auto pt-3 border-t border-divider">
+          {userEmail && (
+            <div className="px-3 pb-2 text-[11px] text-text-gentle truncate" title={userEmail}>
+              {userEmail}
+            </div>
+          )}
           <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-bg-main hover:text-text-primary transition-all">
             <span className="w-5 text-center text-base">⚙</span>
             Impostazioni
+          </button>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-coral hover:bg-coral/10 transition-all disabled:opacity-50"
+          >
+            <span className="w-5 text-center text-base" aria-hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </span>
+            {loggingOut ? "Uscita..." : "Esci"}
           </button>
         </div>
       </nav>
