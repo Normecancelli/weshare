@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { recomputeOrderTotals } from "@/lib/orders/totals";
 
 // Aggiunge un singolo prodotto a una bozza ordine del cliente.
 // Se esiste già una bozza per quel cliente, aggiunge l'item (o incrementa
@@ -150,35 +151,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Ricalcola i totali della bozza dai suoi item
-  const { data: items } = await supabase
-    .from("client_order_items")
-    .select(
-      "quantita, prezzo_unitario_cliente, prezzo_unitario_partner, punti_vp, provvigione",
-    )
-    .eq("order_id", orderId);
-
-  if (items) {
-    const totals = items.reduce(
-      (acc, it) => ({
-        cliente: acc.cliente + it.prezzo_unitario_cliente * it.quantita,
-        partner: acc.partner + it.prezzo_unitario_partner * it.quantita,
-        vp: acc.vp + it.punti_vp * it.quantita,
-        provv: acc.provv + it.provvigione * it.quantita,
-      }),
-      { cliente: 0, partner: 0, vp: 0, provv: 0 },
-    );
-
-    await supabase
-      .from("client_orders")
-      .update({
-        totale_cliente: Math.round(totals.cliente * 100) / 100,
-        totale_partner: Math.round(totals.partner * 100) / 100,
-        totale_vp: Math.round(totals.vp * 100) / 100,
-        totale_provvigione: Math.round(totals.provv * 100) / 100,
-      })
-      .eq("id", orderId);
-  }
+  await recomputeOrderTotals(supabase, orderId);
 
   return NextResponse.json({ order_id: orderId, created });
 }

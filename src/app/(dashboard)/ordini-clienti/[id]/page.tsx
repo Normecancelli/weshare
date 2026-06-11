@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { TrashIcon } from "@/components/icons";
+import type { OrderItem } from "@/lib/types/orders";
 import type { ClientOrder, OrderChannel } from "@/lib/types/orders";
 
 const CHANNELS: { value: OrderChannel; label: string; icon: string }[] = [
@@ -31,6 +32,7 @@ export default function OrdineDetailPage() {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [updatingItem, setUpdatingItem] = useState<string | null>(null);
 
   const fetchOrder = useCallback(async () => {
     setLoading(true);
@@ -75,6 +77,28 @@ export default function OrdineDetailPage() {
     });
     if (res.ok) await fetchOrder();
     setSaving(false);
+  }
+
+  async function updateItemQty(item: OrderItem, nextQty: number) {
+    if (nextQty < 1 || nextQty === item.quantita) return;
+    setUpdatingItem(item.id);
+    const res = await fetch(`/api/client-orders/${id}/items/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quantita: nextQty }),
+    });
+    if (res.ok) await fetchOrder();
+    setUpdatingItem(null);
+  }
+
+  async function removeItem(item: OrderItem) {
+    if (!confirm(`Rimuovere "${item.product?.descrizione || "questo articolo"}" dall'ordine?`)) return;
+    setUpdatingItem(item.id);
+    const res = await fetch(`/api/client-orders/${id}/items/${item.id}`, {
+      method: "DELETE",
+    });
+    if (res.ok) await fetchOrder();
+    setUpdatingItem(null);
   }
 
   async function handleDelete() {
@@ -186,36 +210,91 @@ export default function OrdineDetailPage() {
           <p className="text-sm text-text-secondary">Nessun articolo</p>
         ) : (
           <div className="space-y-2">
-            {items.map((it) => (
-              <div key={it.id} className="flex items-start gap-3 p-3 bg-bg-main rounded-xl">
-                <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center text-accent text-xs font-bold shrink-0">
-                  {it.quantita}×
+            {items.map((it) => {
+              const isDraft = order.stato === "bozza";
+              const busy = updatingItem === it.id;
+              return (
+                <div
+                  key={it.id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-bg-main rounded-xl"
+                >
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-accent-glow flex items-center justify-center text-accent text-xs font-bold shrink-0">
+                      {it.quantita}×
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-text-primary line-clamp-2">
+                        {it.product?.descrizione || `Prodotto ${it.product_id.slice(0, 8)}`}
+                      </div>
+                      <div className="text-xs text-text-secondary mt-0.5">
+                        cod. {it.product?.codice_amway || "—"}
+                        {it.product?.contenuto && ` · ${it.product.contenuto}`}
+                      </div>
+                      <div className="text-[11px] text-text-gentle mt-0.5">
+                        €{it.prezzo_unitario_cliente.toFixed(2)} cad · {it.punti_vp.toFixed(2)} VP cad
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                    {isDraft ? (
+                      <div className="flex items-center gap-1 bg-bg-card border border-border rounded-lg p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => updateItemQty(it, it.quantita - 1)}
+                          disabled={busy || it.quantita <= 1}
+                          className="w-7 h-7 rounded-md hover:bg-bg-section flex items-center justify-center text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                          aria-label="Diminuisci quantità"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          value={it.quantita}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value);
+                            if (!isNaN(v) && v >= 1) updateItemQty(it, v);
+                          }}
+                          className="w-10 text-center text-sm font-semibold bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          disabled={busy}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateItemQty(it, it.quantita + 1)}
+                          disabled={busy}
+                          className="w-7 h-7 rounded-md hover:bg-bg-section flex items-center justify-center text-text-secondary disabled:opacity-30 transition-all"
+                          aria-label="Aumenta quantità"
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-text-secondary">qt. {it.quantita}</span>
+                    )}
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-text-primary whitespace-nowrap">
+                        €{(it.prezzo_unitario_cliente * it.quantita).toFixed(2)}
+                      </div>
+                      <div className="text-xs text-accent-hover font-medium whitespace-nowrap">
+                        {(it.punti_vp * it.quantita).toFixed(2)} VP
+                      </div>
+                    </div>
+                    {isDraft && (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(it)}
+                        disabled={busy}
+                        className="w-8 h-8 rounded-lg hover:bg-coral/10 flex items-center justify-center text-coral disabled:opacity-30 transition-all"
+                        title="Rimuovi articolo"
+                      >
+                        <TrashIcon />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-text-primary truncate">
-                    {it.product?.descrizione || `Prodotto ${it.product_id.slice(0, 8)}`}
-                  </div>
-                  <div className="text-xs text-text-secondary mt-0.5">
-                    cod. {it.product?.codice_amway || "—"}
-                    {it.product?.contenuto && ` · ${it.product.contenuto}`}
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-sm font-semibold text-text-primary">
-                    €{(it.prezzo_unitario_cliente * it.quantita).toFixed(2)}
-                  </div>
-                  <div className="text-xs text-accent-hover font-medium">
-                    {(it.punti_vp * it.quantita).toFixed(2)} VP
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        )}
-        {editable && (
-          <p className="text-xs text-text-gentle mt-3">
-            Per modificare gli articoli, elimina la bozza e creane una nuova.
-          </p>
         )}
       </section>
 
