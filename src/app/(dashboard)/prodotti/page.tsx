@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import type { Product } from "@/lib/types/orders";
 import { AddToOrderModal } from "@/components/add-to-order-modal";
+import { ProductFormModal } from "@/components/product-form-modal";
+import { EditIcon } from "@/components/icons";
 
 export default function ProdottiPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,6 +14,8 @@ export default function ProdottiPage() {
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [orderTarget, setOrderTarget] = useState<Product | null>(null);
+  const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -91,12 +95,24 @@ export default function ProdottiPage() {
           </p>
         </div>
         {isAdmin && (
-          <a
-            href="/prodotti/import"
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
-          >
-            Aggiorna listino
-          </a>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEditProduct(null);
+                setFormMode("create");
+              }}
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-border text-text-primary hover:bg-bg-section transition-all"
+            >
+              + Nuovo prodotto
+            </button>
+            <a
+              href="/prodotti/import"
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
+            >
+              Aggiorna listino
+            </a>
+          </div>
         )}
       </div>
 
@@ -186,13 +202,29 @@ export default function ProdottiPage() {
                 {p.punti_vp.toFixed(2)} VP
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setOrderTarget(p)}
-              className="mt-3 w-full py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
-            >
-              + Carica su ordine
-            </button>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setOrderTarget(p)}
+                className="flex-1 py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
+              >
+                + Carica su ordine
+              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditProduct(p);
+                    setFormMode("edit");
+                  }}
+                  className="px-3 py-2 rounded-xl text-sm border border-border text-text-secondary hover:bg-bg-section hover:text-accent transition-all"
+                  title="Modifica prodotto"
+                  aria-label="Modifica prodotto"
+                >
+                  <EditIcon />
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -211,7 +243,7 @@ export default function ProdottiPage() {
                 <th className="px-3 py-2.5 font-semibold text-right w-24">Cliente</th>
                 <th className="px-3 py-2.5 font-semibold text-right w-24">Partner</th>
                 <th className="px-3 py-2.5 font-semibold text-right w-16">VP</th>
-                <th className="px-3 py-2.5 font-semibold w-28"></th>
+                <th className="px-3 py-2.5 font-semibold w-36"></th>
               </tr>
             </thead>
             <tbody>
@@ -256,13 +288,29 @@ export default function ProdottiPage() {
                     </span>
                   </td>
                   <td className="px-3 py-1.5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setOrderTarget(p)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-white hover:bg-accent-hover transition-all whitespace-nowrap"
-                    >
-                      + Carica
-                    </button>
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setOrderTarget(p)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-white hover:bg-accent-hover transition-all whitespace-nowrap"
+                      >
+                        + Carica
+                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditProduct(p);
+                            setFormMode("edit");
+                          }}
+                          className="w-7 h-7 rounded-md hover:bg-bg-section flex items-center justify-center text-text-gentle hover:text-accent transition-all"
+                          title="Modifica prodotto"
+                          aria-label="Modifica prodotto"
+                        >
+                          <EditIcon />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -272,6 +320,17 @@ export default function ProdottiPage() {
       </div>
 
       <AddToOrderModal product={orderTarget} onClose={() => setOrderTarget(null)} />
+
+      <ProductFormModal
+        mode={formMode || "create"}
+        product={editProduct}
+        open={formMode !== null}
+        onClose={() => {
+          setFormMode(null);
+          setEditProduct(null);
+        }}
+        onSaved={fetchProducts}
+      />
     </div>
   );
 }
