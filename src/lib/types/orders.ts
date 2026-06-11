@@ -13,6 +13,7 @@ export interface Product {
   punti_vp: number;
   volume_vv: number;
   attivo: boolean;
+  image_url?: string | null;
 }
 
 export interface Customer {

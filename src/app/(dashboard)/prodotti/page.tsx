@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Product } from "@/lib/types/orders";
+import { AddToOrderModal } from "@/components/add-to-order-modal";
 
 export default function ProdottiPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -10,6 +11,7 @@ export default function ProdottiPage() {
   const [search, setSearch] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [orderTarget, setOrderTarget] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -138,27 +140,30 @@ export default function ProdottiPage() {
             key={p.id}
             className="bg-bg-card border border-border rounded-xl p-3.5 flex flex-col hover:shadow-md hover:border-accent/30 transition-all"
           >
-            <div className="flex-1 min-w-0 mb-3">
-              <div
-                className="font-semibold text-sm text-text-primary leading-snug line-clamp-2"
-                title={p.descrizione}
-              >
-                {p.descrizione}
-              </div>
-              <div className="text-[11px] text-text-gentle mt-1 flex items-center gap-1.5 flex-wrap">
-                <span className="font-mono">{p.codice_amway}</span>
-                {p.contenuto && (
-                  <>
-                    <span>·</span>
-                    <span>{p.contenuto}</span>
-                  </>
+            <div className="flex gap-3 mb-3">
+              <ProductThumb product={p} size={48} />
+              <div className="flex-1 min-w-0">
+                <div
+                  className="font-semibold text-sm text-text-primary leading-snug line-clamp-2"
+                  title={p.descrizione}
+                >
+                  {p.descrizione}
+                </div>
+                <div className="text-[11px] text-text-gentle mt-1 flex items-center gap-1.5 flex-wrap">
+                  <span className="font-mono">{p.codice_amway}</span>
+                  {p.contenuto && (
+                    <>
+                      <span>·</span>
+                      <span>{p.contenuto}</span>
+                    </>
+                  )}
+                </div>
+                {p.categoria && (
+                  <div className="inline-block text-[10px] text-text-secondary bg-bg-section px-2 py-0.5 rounded-full mt-2 max-w-full truncate">
+                    {p.categoria}
+                  </div>
                 )}
               </div>
-              {p.categoria && (
-                <div className="inline-block text-[10px] text-text-secondary bg-bg-section px-2 py-0.5 rounded-full mt-2 max-w-full truncate">
-                  {p.categoria}
-                </div>
-              )}
             </div>
             <div className="flex items-baseline justify-between pt-2.5 border-t border-divider gap-3">
               <div className="min-w-0">
@@ -181,6 +186,13 @@ export default function ProdottiPage() {
                 {p.punti_vp.toFixed(2)} VP
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setOrderTarget(p)}
+              className="mt-3 w-full py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
+            >
+              + Carica su ordine
+            </button>
           </div>
         ))}
       </div>
@@ -191,13 +203,15 @@ export default function ProdottiPage() {
           <table className="w-full text-sm">
             <thead className="bg-bg-section border-b border-border">
               <tr className="text-left text-[11px] uppercase tracking-wider text-text-secondary">
+                <th className="px-2 py-2.5 font-semibold w-12"></th>
                 <th className="px-3 py-2.5 font-semibold w-20">Codice</th>
                 <th className="px-3 py-2.5 font-semibold">Descrizione</th>
-                <th className="px-3 py-2.5 font-semibold w-32 hidden lg:table-cell">Categoria</th>
+                <th className="px-3 py-2.5 font-semibold w-24 hidden lg:table-cell">Categoria</th>
                 <th className="px-3 py-2.5 font-semibold w-20 hidden lg:table-cell">Contenuto</th>
                 <th className="px-3 py-2.5 font-semibold text-right w-24">Cliente</th>
                 <th className="px-3 py-2.5 font-semibold text-right w-24">Partner</th>
                 <th className="px-3 py-2.5 font-semibold text-right w-16">VP</th>
+                <th className="px-3 py-2.5 font-semibold w-28"></th>
               </tr>
             </thead>
             <tbody>
@@ -208,6 +222,9 @@ export default function ProdottiPage() {
                     i % 2 === 0 ? "bg-transparent" : "bg-bg-main/40"
                   }`}
                 >
+                  <td className="px-2 py-1.5">
+                    <ProductThumb product={p} size={36} />
+                  </td>
                   <td className="px-3 py-2.5 font-mono text-xs text-text-secondary whitespace-nowrap">
                     {p.codice_amway}
                   </td>
@@ -217,7 +234,10 @@ export default function ProdottiPage() {
                     </div>
                   </td>
                   <td className="px-3 py-2.5 text-xs text-text-secondary hidden lg:table-cell">
-                    <span className="truncate inline-block max-w-full" title={p.categoria || ""}>
+                    <span
+                      className="truncate inline-block max-w-full"
+                      title={p.categoria || ""}
+                    >
                       {p.categoria || "—"}
                     </span>
                   </td>
@@ -235,12 +255,51 @@ export default function ProdottiPage() {
                       {p.punti_vp.toFixed(2)}
                     </span>
                   </td>
+                  <td className="px-3 py-1.5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setOrderTarget(p)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-white hover:bg-accent-hover transition-all whitespace-nowrap"
+                    >
+                      + Carica
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <AddToOrderModal product={orderTarget} onClose={() => setOrderTarget(null)} />
+    </div>
+  );
+}
+
+function ProductThumb({ product, size }: { product: Product; size: number }) {
+  if (product.image_url) {
+    return (
+      <img
+        src={product.image_url}
+        alt=""
+        width={size}
+        height={size}
+        className="rounded-lg object-cover bg-bg-section border border-divider"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return (
+    <div
+      className="rounded-lg bg-bg-section border border-divider flex items-center justify-center text-text-gentle"
+      style={{ width: size, height: size }}
+      aria-label="Nessuna immagine"
+    >
+      <svg width={Math.round(size * 0.45)} height={Math.round(size * 0.45)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <path d="M21 15l-5-5L5 21" />
+      </svg>
     </div>
   );
 }
