@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { ProductPickerModal } from "@/components/product-picker-modal";
+import type { Product } from "@/lib/types/orders";
 
 interface ExtractedMatch {
   product_id: string;
@@ -53,6 +55,34 @@ export function WhatsAppExtractor({ onAddItems }: Props) {
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
   const [addedSummary, setAddedSummary] = useState<string | null>(null);
+  const [pickerForUnmatched, setPickerForUnmatched] = useState<string | null>(null);
+
+  function pickManual(product: Product, fromText: string) {
+    const cleanText = fromText.split("-")[0].trim();
+    setMatches((prev) => {
+      const existing = prev.findIndex((m) => m.product_id === product.id);
+      if (existing !== -1) {
+        return prev.map((m, idx) =>
+          idx === existing ? { ...m, quantita: m.quantita + 1, selected: true } : m,
+        );
+      }
+      return [
+        ...prev,
+        {
+          product_id: product.id,
+          codice_amway: product.codice_amway,
+          descrizione: product.descrizione,
+          contenuto: product.contenuto,
+          quantita: 1,
+          matched_text: cleanText || fromText,
+          confidence: "alta",
+          note: "Aggiunto manualmente dal catalogo",
+          selected: true,
+        },
+      ];
+    });
+    setUnmatched((prev) => prev.filter((u) => u !== fromText));
+  }
 
   async function handlePickImage(file: File) {
     setError("");
@@ -337,18 +367,25 @@ export function WhatsAppExtractor({ onAddItems }: Props) {
 
               {unmatched.length > 0 && (
                 <div className="bg-bg-section/60 border border-border rounded-xl p-3">
-                  <div className="text-xs font-semibold text-text-secondary mb-1">
+                  <div className="text-xs font-semibold text-text-secondary mb-2">
                     Non riconosciuto
                   </div>
-                  <div className="text-xs text-text-secondary">
+                  <div className="flex flex-wrap gap-2">
                     {unmatched.map((u, i) => (
-                      <span key={i} className="inline-block mr-2 mb-1 bg-bg-card px-2 py-0.5 rounded-md">
-                        {u}
-                      </span>
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setPickerForUnmatched(u)}
+                        className="inline-flex items-center gap-1.5 bg-bg-card border border-border hover:border-accent hover:bg-accent-glow/40 text-text-secondary hover:text-accent-hover text-xs px-2.5 py-1 rounded-md transition-all"
+                        title="Cerca nel catalogo"
+                      >
+                        <span className="text-accent">+</span>
+                        <span className="text-left">{u}</span>
+                      </button>
                     ))}
                   </div>
-                  <div className="text-[11px] text-text-gentle mt-1.5">
-                    Aggiungili manualmente dal catalogo prodotti.
+                  <div className="text-[11px] text-text-gentle mt-2">
+                    Click su un chip per cercarlo nel catalogo prodotti e aggiungerlo manualmente.
                   </div>
                 </div>
               )}
@@ -378,6 +415,17 @@ export function WhatsAppExtractor({ onAddItems }: Props) {
           )}
         </div>
       )}
+
+      <ProductPickerModal
+        open={pickerForUnmatched !== null}
+        initialQuery={pickerForUnmatched ? pickerForUnmatched.split("-")[0].trim() : ""}
+        onClose={() => setPickerForUnmatched(null)}
+        onPick={(product) => {
+          if (pickerForUnmatched) {
+            pickManual(product, pickerForUnmatched);
+          }
+        }}
+      />
     </section>
   );
 }
