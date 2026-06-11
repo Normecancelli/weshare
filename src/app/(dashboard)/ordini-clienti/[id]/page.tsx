@@ -202,7 +202,23 @@ export default function OrdineDetailPage() {
 
       {/* WhatsApp Extractor — solo su bozze con canale WhatsApp */}
       {order.stato === "bozza" && canale === "whatsapp" && (
-        <WhatsAppExtractor orderId={order.id} onItemsAdded={fetchOrder} />
+        <WhatsAppExtractor
+          onAddItems={async (extracted) => {
+            for (const it of extracted) {
+              const res = await fetch("/api/client-orders/add-item", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  customer_id: order.customer_id,
+                  product_id: it.product_id,
+                  quantita: it.quantita,
+                }),
+              });
+              if (!res.ok) throw new Error("Errore aggiunta articoli");
+            }
+            await fetchOrder();
+          }}
+        />
       )}
 
       {/* Articoli */}

@@ -20,12 +20,22 @@ interface ParseResponse {
   unmatched: string[];
 }
 
-interface Props {
-  orderId: string;
-  onItemsAdded: () => void;
+export interface ExtractedItem {
+  product_id: string;
+  codice_amway: string;
+  descrizione: string;
+  contenuto: string | null;
+  quantita: number;
 }
 
-export function WhatsAppExtractor({ orderId, onItemsAdded }: Props) {
+interface Props {
+  // Chiamato quando l'utente conferma il batch. Il parent decide se
+  // aggiungere localmente al carrello (nuovo ordine) o postare al
+  // server (bozza esistente). Può essere async.
+  onAddItems: (items: ExtractedItem[]) => Promise<void> | void;
+}
+
+export function WhatsAppExtractor({ onAddItems }: Props) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [parsing, setParsing] = useState(false);
@@ -73,33 +83,27 @@ export function WhatsAppExtractor({ orderId, onItemsAdded }: Props) {
     }
     setAdding(true);
     setError("");
-
-    let okCount = 0;
-    let failCount = 0;
-    for (const m of toAdd) {
-      const customerOrderRes = await fetch("/api/client-orders/add-item", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_id: await getCustomerForOrder(orderId),
+    try {
+      await onAddItems(
+        toAdd.map((m) => ({
           product_id: m.product_id,
+          codice_amway: m.codice_amway,
+          descrizione: m.descrizione,
+          contenuto: m.contenuto,
           quantita: m.quantita,
-        }),
-      });
-      if (customerOrderRes.ok) okCount++;
-      else failCount++;
+        })),
+      );
+      setAddedSummary(
+        `${toAdd.length} articol${toAdd.length === 1 ? "o" : "i"} aggiunt${toAdd.length === 1 ? "o" : "i"} all'ordine`,
+      );
+      setMatches([]);
+      setUnmatched([]);
+      setMessage("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore inserimento articoli");
+    } finally {
+      setAdding(false);
     }
-
-    setAdding(false);
-    setAddedSummary(
-      failCount === 0
-        ? `${okCount} articol${okCount === 1 ? "o aggiunto" : "i aggiunti"} alla bozza`
-        : `${okCount} aggiunti, ${failCount} falliti`,
-    );
-    setMatches([]);
-    setUnmatched([]);
-    setMessage("");
-    onItemsAdded();
   }
 
   return (
@@ -276,7 +280,7 @@ export function WhatsAppExtractor({ orderId, onItemsAdded }: Props) {
                   disabled={adding || matches.filter((m) => m.selected).length === 0}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all disabled:opacity-50"
                 >
-                  {adding ? "Aggiungo..." : "Aggiungi alla bozza"}
+                  {adding ? "Aggiungo..." : "Aggiungi all'ordine"}
                 </button>
               </div>
             </div>
@@ -285,11 +289,4 @@ export function WhatsAppExtractor({ orderId, onItemsAdded }: Props) {
       )}
     </section>
   );
-}
-
-async function getCustomerForOrder(orderId: string): Promise<string> {
-  const res = await fetch(`/api/client-orders/${orderId}`);
-  if (!res.ok) throw new Error("Ordine non caricabile");
-  const data = await res.json();
-  return data.order.customer_id;
 }

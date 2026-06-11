@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProductSearch } from "@/components/ui/product-search";
+import { WhatsAppExtractor } from "@/components/whatsapp-extractor";
 import type { Product, Customer, OrderChannel } from "@/lib/types/orders";
 
 interface CartItem {
@@ -330,6 +331,29 @@ export default function NuovoOrdinePage() {
           ))}
         </div>
       </div>
+
+      {/* WhatsApp Extractor — solo se canale = whatsapp */}
+      {canale === "whatsapp" && (
+        <WhatsAppExtractor
+          onAddItems={(extracted) => {
+            for (const it of extracted) {
+              const product = products.find((p) => p.id === it.product_id);
+              if (!product) continue;
+              setItems((prev) => {
+                const existing = prev.find((i) => i.product.id === product.id);
+                if (existing) {
+                  return prev.map((i) =>
+                    i.product.id === product.id
+                      ? { ...i, quantita: i.quantita + it.quantita }
+                      : i,
+                  );
+                }
+                return [...prev, { product, quantita: it.quantita }];
+              });
+            }
+          }}
+        />
+      )}
 
       {/* Product search + cart */}
       <div className="bg-bg-card border border-border rounded-2xl p-4 mb-4">
