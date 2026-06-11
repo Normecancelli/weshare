@@ -42,21 +42,44 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { message?: string };
+  let body: {
+    message?: string;
+    image?: { data: string; media_type: "image/jpeg" | "image/png" | "image/gif" | "image/webp" };
+  };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
   }
   const message = (body.message || "").trim();
-  if (!message) {
-    return NextResponse.json({ error: "Messaggio vuoto" }, { status: 400 });
+  const image = body.image;
+
+  if (!message && !image) {
+    return NextResponse.json(
+      { error: "Devi fornire un messaggio di testo o un'immagine" },
+      { status: 400 },
+    );
   }
   if (message.length > 4000) {
     return NextResponse.json(
       { error: "Messaggio troppo lungo (max 4000 caratteri)" },
       { status: 400 },
     );
+  }
+  if (image) {
+    if (!image.data || !image.media_type) {
+      return NextResponse.json(
+        { error: "Formato immagine non valido" },
+        { status: 400 },
+      );
+    }
+    // Limite ~6MB base64 (~4.5MB binari) per non saturare il modello
+    if (image.data.length > 8_000_000) {
+      return NextResponse.json(
+        { error: "Immagine troppo grande (max 4-5MB). Riduci la risoluzione." },
+        { status: 400 },
+      );
+    }
   }
 
   const { data: catalogRows, error: catalogError } = await supabase
@@ -151,6 +174,8 @@ REGOLE:
 - Testi che sembrano prodotti ma non hanno match nel catalogo vanno in "unmatched".
 - Rispondi SEMPRE chiamando l'unica tool "registra_ordine".
 
+- L'input può essere un messaggio di testo, un'immagine (es. screenshot WhatsApp, foto di lista scritta a mano, scontrino) o entrambi. In caso di immagine, leggi prima il testo dall'immagine e poi applica le stesse regole.
+
 CATALOGO (codice | descrizione | contenuto):
 ${catalogText}`;
 
@@ -172,7 +197,26 @@ ${catalogText}`;
       messages: [
         {
           role: "user",
-          content: `Messaggio del cliente:\n"""${message}"""`,
+          content: [
+            ...(image
+              ? [
+                  {
+                    type: "image" as const,
+                    source: {
+                      type: "base64" as const,
+                      media_type: image.media_type,
+                      data: image.data,
+                    },
+                  },
+                ]
+              : []),
+            {
+              type: "text" as const,
+              text: message
+                ? `Messaggio del cliente:\n"""${message}"""`
+                : "Estrai i prodotti dall'immagine sopra. Ignora UI di WhatsApp (timestamp, spunte di lettura, intestazioni). Leggi solo il contenuto del messaggio.",
+            },
+          ],
         },
       ],
     });
