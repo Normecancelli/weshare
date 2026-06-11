@@ -70,7 +70,7 @@ export default function LoginPage() {
             Amway Partner
           </h1>
           <p className="text-sm text-text-gentle mt-1">
-            powered by ME.TO.DO®
+            powered by Me.To.Do for you®
           </p>
         </div>
 

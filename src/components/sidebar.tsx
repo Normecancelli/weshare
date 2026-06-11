@@ -99,7 +99,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
               Amway Partner
             </h1>
             <span className="text-[11px] text-text-gentle tracking-wide">
-              powered by ME.TO.DO®
+              powered by Me.To.Do for you®
             </span>
           </div>
           {onCloseMobile && (

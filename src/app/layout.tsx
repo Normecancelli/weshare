@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Amway Partner · powered by ME.TO.DO®",
+  title: "Amway Partner · powered by Me.To.Do for you®",
   description: "Gestione attività Amway — multi-utente, multi-ruolo",
 };
 

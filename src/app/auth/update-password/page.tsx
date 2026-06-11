@@ -58,7 +58,7 @@ export default function UpdatePasswordPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-text-primary">Amway Partner</h1>
-          <p className="text-sm text-text-gentle mt-1">powered by ME.TO.DO®</p>
+          <p className="text-sm text-text-gentle mt-1">powered by Me.To.Do for you®</p>
         </div>
 
         <div className="bg-bg-card border border-border rounded-2xl p-8 shadow-sm">

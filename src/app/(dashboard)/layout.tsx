@@ -29,7 +29,7 @@ export default function DashboardLayout({
           </button>
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-bold text-text-primary tracking-tight">Amway Partner</span>
-            <span className="text-[10px] text-text-gentle tracking-wide">powered by ME.TO.DO®</span>
+            <span className="text-[10px] text-text-gentle tracking-wide">powered by Me.To.Do for you®</span>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-8">{children}</main>
