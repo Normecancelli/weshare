@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { TrashIcon } from "@/components/icons";
+import { WhatsAppExtractor } from "@/components/whatsapp-extractor";
 import type { OrderItem } from "@/lib/types/orders";
 import type { ClientOrder, OrderChannel } from "@/lib/types/orders";
 
@@ -198,6 +199,11 @@ export default function OrdineDetailPage() {
           ))}
         </div>
       </section>
+
+      {/* WhatsApp Extractor — solo su bozze con canale WhatsApp */}
+      {order.stato === "bozza" && canale === "whatsapp" && (
+        <WhatsAppExtractor orderId={order.id} onItemsAdded={fetchOrder} />
+      )}
 
       {/* Articoli */}
       <section className="bg-bg-card border border-border rounded-2xl p-5 mb-4">
