@@ -134,6 +134,10 @@ export default function LoginPage() {
             >
               {loading ? "Accesso..." : "Accedi"}
             </button>
+
+            <p className="text-center text-xs text-text-gentle mt-4">
+              Non hai un account? Chiedi un invito al tuo sponsor.
+            </p>
           </form>
         ) : (
           <form
