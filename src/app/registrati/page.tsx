@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,6 +31,20 @@ const input =
   "w-full px-3 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
 
 export default function RegistratiPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <RegistratiInner />
+    </Suspense>
+  );
+}
+
+function RegistratiInner() {
   const router = useRouter();
   const search = useSearchParams();
   const supabase = createClient();
