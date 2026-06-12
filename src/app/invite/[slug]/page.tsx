@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { sanitizeSlug } from "@/lib/auth/slug";
 
 interface Sponsor {
   id: string;
@@ -36,7 +37,14 @@ export default function InvitePage() {
       setCurrentEmail(data.user?.email ?? null);
     });
 
-    fetch(`/api/sponsor/${encodeURIComponent(slug)}`)
+    const cleanSlug = sanitizeSlug(slug);
+    if (!cleanSlug) {
+      setError("Link non valido");
+      setLoading(false);
+      return;
+    }
+
+    fetch(`/api/sponsor/${encodeURIComponent(cleanSlug)}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.sponsor) setSponsor(data.sponsor);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sanitizeSlug } from "@/lib/auth/slug";
 
 type Qualifica =
   | "nessuna"
@@ -73,7 +74,13 @@ export async function POST(request: NextRequest) {
   const supabase = createAdminClient();
 
   // 1) Verifica sponsor
-  const slug = body.sponsor_slug.trim();
+  const slug = sanitizeSlug(body.sponsor_slug);
+  if (!slug) {
+    return NextResponse.json(
+      { error: "Link sponsor non valido" },
+      { status: 400 },
+    );
+  }
   const { data: sponsor } = await supabase
     .from("profiles")
     .select("id, codice_amway, nome")

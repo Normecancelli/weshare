@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { sanitizeSlug } from "@/lib/auth/slug";
 
 interface Sponsor {
   id: string;
@@ -48,7 +49,7 @@ function RegistratiInner() {
   const router = useRouter();
   const search = useSearchParams();
   const supabase = createClient();
-  const sponsorSlug = search.get("sponsor") || "";
+  const sponsorSlug = sanitizeSlug(search.get("sponsor") || "");
 
   const [sponsor, setSponsor] = useState<Sponsor | null>(null);
   const [sponsorLoading, setSponsorLoading] = useState(true);
