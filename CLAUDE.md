@@ -163,7 +163,61 @@ CREATE TABLE event_attendees (
 1. **Sessione B**: CRUD eventi + pagine `/eventi` (lista, dettaglio, nuovo, RSVP) + migration 006
 2. **Sessione C**: dashboard pannello eventi + banner urgente + sidebar badge + `/impostazioni` + modal QR personale
 3. **Email reminder 24h** per eventi: cron Vercel + endpoint che scansiona event_attendees + invia via Resend (richiede Resend attivo, ✅ già pronto)
-4. **Settings/Impostazioni**: pagina per il partner per modificare `codice_attivita`, `diamante_riferimento`, qualifica, preferenze notifiche
+4. **Settings/Impostazioni** (`/impostazioni`) — spec dettagliata Alejerry 2026-06-13:
+
+   ```
+   ┌────────────────────────────────────────────────────────┐
+   │ Impostazioni                                           │
+   ├────────────────────────────────────────────────────────┤
+   │ 1. Foto profilo                                        │
+   │    [Avatar tondo grande]                               │
+   │    [Carica nuova foto]  [Rimuovi]                      │
+   │                                                        │
+   │ 2. Dati personali                                      │
+   │    Nome, Cognome, Cellulare                            │
+   │    Indirizzo, CAP, Città                               │
+   │                                                        │
+   │ 3. Profilo Amway                                       │
+   │    Codice Amway          ← READ-ONLY (no edit)         │
+   │    Codice attività       ← NUOVO campo DB              │
+   │    Qualifica [dropdown]                                │
+   │    Data ingresso                                       │
+   │    Platino di riferimento [autocomplete]               │
+   │    Diamante di riferimento [autocomplete] ← NUOVO      │
+   │                                                        │
+   │ 4. Notifiche email                                     │
+   │    [✓] Reminder eventi 72h e 24h prima                 │
+   │    [✓] Riepilogo settimanale                           │
+   │    [✓] Compleanni / date da ricordare clienti          │
+   │                                                        │
+   │ 5. Account                                             │
+   │    Email (read-only) — "Per cambiare contatta admin"   │
+   │    [Cambia password] → /auth/update-password           │
+   │    [Esci]                                              │
+   └────────────────────────────────────────────────────────┘
+   ```
+
+   **Schema DB — Migration 006:**
+   - `profiles.foto_url TEXT NULL` — URL Supabase Storage bucket `avatars` (pubblico)
+   - `profiles.cap TEXT NULL`
+   - `profiles.codice_attivita TEXT NULL` — codice attività Amway (diverso da `codice_amway` distributore)
+   - `profiles.diamante_riferimento_id UUID NULL REFERENCES profiles(id)` — analogo a `platino_riferimento_id`
+   - `profiles.preferenze_notifiche JSONB DEFAULT '{"reminder_eventi":true,"riepilogo_settimanale":true,"date_clienti":true}'` (già esiste, definire shape definitivo)
+
+   **Storage:** bucket `avatars` pubblico, policy upload solo `auth.uid()`, path `{user_id}/avatar.jpg`. Resize lato client a 512×512 con Canvas API (no deps esterne).
+
+   **Endpoint nuovi:**
+   - `POST /api/profile/avatar` (upload foto, multipart)
+   - `DELETE /api/profile/avatar` (rimuovi)
+   - `PATCH /api/profile` (update dati personali, Amway, notifiche)
+   - `GET /api/sponsor/[slug]` → aggiungere `foto_url` al payload
+
+   **UI riusabile:** `<Avatar size="..." profile={...} />` — mostra foto se `foto_url`, fallback iniziali. Usare in sidebar, lista team, landing invito, customer-picker, ovunque oggi appaiano iniziali.
+
+   **Vincoli:**
+   - `codice_amway` immutabile da UI (solo admin può modificare via DB)
+   - Cambio email passa per admin (messaggio precompilato verso `alessandro@iseven.it`)
+   - Cambio password riusa flusso esistente `/auth/update-password`
 5. **Conferma pre-import listino** (~15 min): dialog "stai per sovrascrivere X prezzi e disattivare Y prodotti, mese rilevato: M". Endpoint preview-mode che parsa senza scrivere
 6. **Modifica articoli ordine già confermato**: oggi non si può cambiare items di un ordine confermato. Da decidere se aprirlo per stato `confermato` o solo `bozza`
 7. **Wa.me intelligenti templates**: oltre al pannello promemoria, aggiungere template per "follow-up cliente", "sollecito ordine programmato" (zero infra, manual click)
