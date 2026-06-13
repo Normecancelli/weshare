@@ -151,7 +151,7 @@ export default function BenvenutoPage() {
                 )}
                 <div>
                   <label className="text-xs font-semibold text-text-secondary mb-1 block">
-                    Codice Amway
+                    Codice Partner Amway
                     <span className="text-text-gentle font-normal"> · se ce l&apos;hai</span>
                   </label>
                   <input
