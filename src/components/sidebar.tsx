@@ -2,45 +2,78 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  TrendingUp,
+  Users,
+  Contact,
+  Network,
+  UserPlus,
+  Receipt,
+  ShoppingCart,
+  Package,
+  Upload,
+  Calendar,
+  Wallet,
+  Target,
+  GraduationCap,
+  Presentation,
+  Settings,
+  LogOut,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const menuSections = [
+type MenuItem = {
+  name: string;
+  icon: LucideIcon;
+  href: string;
+  badge?: string;
+};
+
+type MenuSection = {
+  label: string;
+  items: MenuItem[];
+};
+
+const menuSections: MenuSection[] = [
   {
     label: "Panoramica",
     items: [
-      { name: "Dashboard", icon: "◉", href: "/" },
-      { name: "Performance", icon: "★", href: "/performance", badge: "Q2" },
+      { name: "Dashboard", icon: LayoutDashboard, href: "/" },
+      { name: "Performance", icon: TrendingUp, href: "/performance", badge: "Q2" },
     ],
   },
   {
     label: "Persone",
     items: [
-      { name: "I miei Clienti", icon: "👥", href: "/clienti" },
-      { name: "Contatti", icon: "◎", href: "/contatti" },
-      { name: "Il mio Team", icon: "♦", href: "/team" },
-      { name: "Prospect", icon: "◇", href: "/prospect" },
+      { name: "I miei Clienti", icon: Users, href: "/clienti" },
+      { name: "Contatti", icon: Contact, href: "/contatti" },
+      { name: "Il mio Team", icon: Network, href: "/team" },
+      { name: "Prospect", icon: UserPlus, href: "/prospect" },
     ],
   },
   {
     label: "Attività",
     items: [
-      { name: "Fatturati", icon: "▤", href: "/ordini" },
-      { name: "Ordini Clienti", icon: "🛒", href: "/ordini-clienti" },
-      { name: "Prodotti", icon: "▢", href: "/prodotti" },
-      { name: "Importa dati", icon: "📊", href: "/import" },
+      { name: "Fatturati", icon: Receipt, href: "/ordini" },
+      { name: "Ordini Clienti", icon: ShoppingCart, href: "/ordini-clienti" },
+      { name: "Prodotti", icon: Package, href: "/prodotti" },
+      { name: "Importa dati", icon: Upload, href: "/import" },
     ],
   },
   {
     label: "Eventi",
-    items: [{ name: "Tutti gli eventi", icon: "◈", href: "/eventi" }],
+    items: [{ name: "Tutti gli eventi", icon: Calendar, href: "/eventi" }],
   },
   {
     label: "Crescita",
     items: [
-      { name: "Entrate", icon: "↗", href: "/entrate" },
-      { name: "Obiettivi", icon: "◎", href: "/obiettivi" },
-      { name: "Formazione", icon: "▵", href: "/formazione" },
-      { name: "Presentazioni", icon: "▭", href: "/presentazioni" },
+      { name: "Entrate", icon: Wallet, href: "/entrate" },
+      { name: "Obiettivi", icon: Target, href: "/obiettivi" },
+      { name: "Formazione", icon: GraduationCap, href: "/formazione" },
+      { name: "Presentazioni", icon: Presentation, href: "/presentazioni" },
     ],
   },
 ];
@@ -87,18 +120,18 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
       )}
       <nav
         className={`
-          bg-bg-section border-r border-border flex flex-col py-7
+          bg-[var(--op-sidebar-bg)] flex flex-col py-7
           fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:relative md:translate-x-0 md:shrink-0 md:z-0
         `}
       >
-        <div className="px-6 pb-7 border-b border-divider mb-5 flex items-start justify-between gap-3">
+        <div className="px-6 pb-7 border-b border-[var(--op-sidebar-divider)] mb-5 flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-lg font-bold text-text-primary tracking-tight">
+            <h1 className="text-lg font-bold text-white tracking-tight">
               Amway Partner
             </h1>
-            <span className="text-[11px] text-text-gentle tracking-wide">
+            <span className="text-[11px] text-white/50 tracking-wide">
               powered by Me.To.Do for you®
             </span>
           </div>
@@ -107,12 +140,9 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
               type="button"
               onClick={onCloseMobile}
               aria-label="Chiudi menu"
-              className="md:hidden w-8 h-8 rounded-lg hover:bg-bg-main flex items-center justify-center text-text-secondary"
+              className="md:hidden w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/65"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <X size={18} strokeWidth={2} />
             </button>
           )}
         </div>
@@ -120,54 +150,52 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
         <div className="flex-1 overflow-y-auto">
           {menuSections.map((section) => (
             <div key={section.label} className="px-4 mb-2">
-              <div className="text-[10px] font-semibold uppercase tracking-[1.2px] text-text-gentle px-3 pt-3 pb-1.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[1.2px] text-white/50 px-3 pt-3 pb-1.5">
                 {section.label}
               </div>
-              {section.items.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => handleNav(item.name, item.href)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                    active === item.name
-                      ? "bg-accent-glow text-accent-hover font-semibold"
-                      : "text-text-primary/80 hover:bg-bg-main hover:text-text-primary"
-                  }`}
-                >
-                  <span className="w-5 text-center text-base">{item.icon}</span>
-                  {item.name}
-                  {item.badge && (
-                    <span className="ml-auto bg-coral-soft text-coral text-[11px] font-semibold px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = active === item.name;
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => handleNav(item.name, item.href)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                      isActive
+                        ? "bg-[var(--op-sidebar-active)] text-white font-semibold"
+                        : "text-[var(--op-sidebar-text)] hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <Icon size={18} strokeWidth={1.75} className="shrink-0" />
+                    {item.name}
+                    {item.badge && (
+                      <span className="ml-auto bg-[var(--op-blue-50)] text-[var(--op-blue-800)] text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
 
-        <div className="px-4 mt-auto pt-3 border-t border-divider">
+        <div className="px-4 mt-auto pt-3 border-t border-[var(--op-sidebar-divider)]">
           {userEmail && (
-            <div className="px-3 pb-2 text-[11px] text-text-gentle truncate" title={userEmail}>
+            <div className="px-3 pb-2 text-[11px] text-white/50 truncate" title={userEmail}>
               {userEmail}
             </div>
           )}
-          <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-bg-main hover:text-text-primary transition-all">
-            <span className="w-5 text-center text-base">⚙</span>
+          <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[var(--op-sidebar-text)] hover:bg-white/5 hover:text-white transition-all">
+            <Settings size={18} strokeWidth={1.75} className="shrink-0" />
             Impostazioni
           </button>
           <button
             onClick={handleLogout}
             disabled={loggingOut}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-coral hover:bg-coral/10 transition-all disabled:opacity-50"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[var(--op-sidebar-text)] hover:bg-white/5 hover:text-white transition-all disabled:opacity-50"
           >
-            <span className="w-5 text-center text-base" aria-hidden>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </span>
+            <LogOut size={18} strokeWidth={1.75} className="shrink-0" />
             {loggingOut ? "Uscita..." : "Esci"}
           </button>
         </div>
