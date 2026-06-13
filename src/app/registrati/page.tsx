@@ -364,8 +364,7 @@ function RegistratiInner() {
                         {platino.nome}
                       </div>
                       <div className="text-[11px] text-text-secondary">
-                        {platino.qualifica}
-                        {platino.codice_amway ? ` · cod. ${platino.codice_amway}` : ""}
+                        {platino.codice_amway ? `cod. ${platino.codice_amway}` : ""}
                       </div>
                     </div>
                     <button
@@ -415,8 +414,7 @@ function RegistratiInner() {
                                 {p.nome}
                               </div>
                               <div className="text-[11px] text-text-secondary">
-                                {p.qualifica}
-                                {p.codice_amway ? ` · cod. ${p.codice_amway}` : ""}
+                                {p.codice_amway ? `cod. ${p.codice_amway}` : ""}
                               </div>
                             </button>
                           ))
