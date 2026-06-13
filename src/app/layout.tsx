@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Amway Partner · powered by Me.To.Do for you®",
-  description: "Gestione attività Amway — multi-utente, multi-ruolo",
+  title: "WeShare · powered by Me.To.Do for you®",
+  description: "Gestione attività WeShare — multi-utente, multi-ruolo",
 };
 
 export default function RootLayout({

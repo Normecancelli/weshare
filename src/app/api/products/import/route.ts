@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Solo un amministratore può aggiornare il listino. Contatta il referente Amway Partner.",
+          "Solo un amministratore può aggiornare il listino. Contatta il referente WeShare.",
       },
       { status: 403 },
     );

@@ -129,7 +129,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
         <div className="px-6 pb-7 border-b border-[var(--op-sidebar-divider)] mb-5 flex items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-bold text-white tracking-tight">
-              Amway Partner
+              WeShare
             </h1>
             <span className="text-[11px] text-white/50 tracking-wide">
               powered by Me.To.Do for you®

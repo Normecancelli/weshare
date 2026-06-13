@@ -67,7 +67,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-text-primary">
-            Amway Partner
+            WeShare
           </h1>
           <p className="text-sm text-text-gentle mt-1">
             powered by Me.To.Do for you®

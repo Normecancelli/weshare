@@ -48,7 +48,7 @@ export default function ProdottiImportPage() {
         <p className="text-3xl mb-3">🔒</p>
         <h2 className="text-xl font-bold mb-2">Area riservata</h2>
         <p className="text-text-secondary text-sm mb-5">
-          Solo un amministratore può aggiornare il listino prezzi. Contatta il referente Amway Partner del tuo gruppo.
+          Solo un amministratore può aggiornare il listino prezzi. Contatta il referente WeShare del tuo gruppo.
         </p>
         <button
           onClick={() => router.push("/prodotti")}

@@ -115,7 +115,7 @@ export default function InvitePage() {
     <div className="flex-1 flex items-center justify-center bg-bg-main px-4 py-10 overflow-y-auto">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-text-primary">Amway Partner</h1>
+          <h1 className="text-2xl font-bold text-text-primary">WeShare</h1>
           <p className="text-sm text-text-gentle mt-1">powered by Me.To.Do for you®</p>
         </div>
 
@@ -141,7 +141,7 @@ export default function InvitePage() {
               Unisciti al gruppo
             </h2>
             <p className="text-sm text-text-secondary mb-5">
-              Crea il tuo account Amway Partner per gestire clienti, ordini ed eventi del tuo team.
+              Crea il tuo account WeShare per gestire clienti, ordini ed eventi del tuo team.
               La registrazione richiede 1 minuto.
             </p>
             <button

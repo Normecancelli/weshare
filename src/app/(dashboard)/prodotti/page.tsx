@@ -68,7 +68,7 @@ export default function ProdottiPage() {
           <p className="text-text-secondary text-sm mb-4">
             {isAdmin
               ? "Importa il listino prezzi Amway per iniziare."
-              : "Il listino prezzi non è ancora stato caricato. Contatta il referente Amway Partner."}
+              : "Il listino prezzi non è ancora stato caricato. Contatta il referente WeShare."}
           </p>
           {isAdmin && (
             <a

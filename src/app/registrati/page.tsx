@@ -206,7 +206,7 @@ function RegistratiInner() {
     <div className="flex-1 overflow-y-auto bg-bg-main px-4 py-8">
       <div className="w-full max-w-xl mx-auto">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-text-primary">Amway Partner</h1>
+          <h1 className="text-2xl font-bold text-text-primary">WeShare</h1>
           <p className="text-sm text-text-gentle mt-1">powered by Me.To.Do for you®</p>
         </div>
 

@@ -25,7 +25,7 @@ export default function DashboardLayout({
             <Menu size={20} strokeWidth={1.75} />
           </button>
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-bold text-text-primary tracking-tight">Amway Partner</span>
+            <span className="text-sm font-bold text-text-primary tracking-tight">WeShare</span>
             <span className="text-[10px] text-text-gentle tracking-wide">powered by Me.To.Do for you®</span>
           </div>
         </header>

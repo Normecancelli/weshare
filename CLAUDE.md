@@ -1,6 +1,6 @@
-# Amway Partner — Riferimento progetto
+# WeShare — Riferimento progetto
 
-Web app per la gestione delle attività del team Amway di **Alejerry (Alessandro Setten, qualifica diamante)**. Centralizza clienti, ordini, listino, eventi e formazione del gruppo di 79 partner su 10 livelli. **Brand**: "Amway Partner · powered by Me.To.Do for you®".
+Web app per la gestione delle attività del team Amway di **Alejerry (Alessandro Setten, qualifica diamante)**. Centralizza clienti, ordini, listino, eventi e formazione del gruppo di 79 partner su 10 livelli. **Brand**: "WeShare · powered by Me.To.Do for you®".
 
 ## Stack
 
