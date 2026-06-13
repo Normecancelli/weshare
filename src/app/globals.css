@@ -1,38 +1,55 @@
 @import "tailwindcss";
 
 :root {
+  /* ── Ocean Pro — palette grezza ─────────────────────────── */
+  --op-navy:        #0B2545;
+  --op-blue:        #1D6FA4;
+  --op-blue-light:  #378ADD;
+  --op-blue-50:     #E6F1FB;
+  --op-blue-800:    #0C447C;
+  --op-surface:     #F0F4F8;
+  --op-card:        #FFFFFF;
+  --op-border:      #E0E8F0;
+  --op-text-secondary: #4A6480;
+  --op-text-muted:     #6B8099;
+
+  /* Sidebar (dark surface dedicata) */
+  --op-sidebar-bg:      #0B2545;
+  --op-sidebar-text:    rgba(255,255,255,0.65);
+  --op-sidebar-active:  #1D6FA4;
+  --op-sidebar-divider: rgba(255,255,255,0.08);
+
+  /* ── Alias semantici (nomi storici, ri-puntati) ─────────── */
   /* Fondali */
-  --bg-main: #FBF8F3;
-  --bg-card: #FFFEFB;
-  --bg-section: #F5EDE4;
+  --bg-main:    var(--op-surface);
+  --bg-card:    var(--op-card);
+  --bg-section: var(--op-surface);
 
   /* Testi */
-  --text-primary: #3D3229;
-  --text-secondary: #8C7E72;
-  --text-gentle: #B8ADA2;
+  --text-primary:   var(--op-navy);
+  --text-secondary: var(--op-text-secondary);
+  --text-gentle:    var(--op-text-muted);
 
-  /* Accent — Gold */
-  --accent: #E8A020;
-  --accent-hover: #CC8A0E;
-  --accent-glow: #FEF0D5;
+  /* Accent — ora Ocean blue */
+  --accent:       var(--op-blue);
+  --accent-hover: var(--op-blue-light);
+  --accent-glow:  var(--op-blue-50);
 
-  /* Emozione — Corallo */
-  --coral: #E0917E;
-  --coral-soft: #FBEAE5;
-
-  /* Emozione — Lavanda */
-  --lavender: #B8A9D4;
-  --lavender-soft: #F0ECF6;
+  /* Coral/Lavender ri-mappati a blu chiaro (rebrand integrale) */
+  --coral:         var(--op-blue-light);
+  --coral-soft:    var(--op-blue-50);
+  --lavender:      var(--op-blue-light);
+  --lavender-soft: var(--op-blue-50);
 
   /* Semantici */
   --success: #7DB89B;
   --warning: #E8A020;
-  --error: #CD6B6B;
-  --info: #B8A9D4;
+  --error:   #CD6B6B;
+  --info:    var(--op-blue-light);
 
   /* Bordi */
-  --border: #EDE7DF;
-  --divider: #F3EDE6;
+  --border:  var(--op-border);
+  --divider: var(--op-border);
 
   /* Mapping Tailwind */
   --background: var(--bg-main);
