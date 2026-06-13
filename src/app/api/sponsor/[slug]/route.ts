@@ -13,13 +13,15 @@ export async function GET(
   if (!safeSlug) {
     return NextResponse.json({ error: "Slug mancante o non valido" }, { status: 400 });
   }
-  const upperSlug = safeSlug.toUpperCase();
 
   const supabase = createAdminClient();
+  // Match case-insensitive su invite_url_slug. Se più di un profilo matcha
+  // (improbabile), prendiamo il primo per evitare 500.
   const { data, error } = await supabase
     .from("profiles")
     .select("id, codice_amway, nome, qualifica, invite_url_slug")
-    .or(`invite_url_slug.eq.${upperSlug},invite_url_slug.eq.${safeSlug}`)
+    .ilike("invite_url_slug", safeSlug)
+    .limit(1)
     .maybeSingle();
 
   if (error) {
