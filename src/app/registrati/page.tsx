@@ -86,10 +86,16 @@ function RegistratiInner() {
     fetch(`/api/sponsor/${encodeURIComponent(sponsorSlug)}`)
       .then((r) => r.json())
       .then((data) => {
-        if (data.sponsor) setSponsor(data.sponsor);
-        else setSponsorError(data.error || "Sponsor non trovato");
+        if (data.sponsor) {
+          setSponsor(data.sponsor);
+        } else {
+          const msg = typeof data.error === "string" && !data.error.startsWith("TypeError")
+            ? data.error
+            : "Sponsor non trovato. Verifica che il link sia corretto.";
+          setSponsorError(msg);
+        }
       })
-      .catch(() => setSponsorError("Errore caricamento sponsor"))
+      .catch(() => setSponsorError("Errore caricamento sponsor. Riprova tra poco."))
       .finally(() => setSponsorLoading(false));
   }, [sponsorSlug]);
 

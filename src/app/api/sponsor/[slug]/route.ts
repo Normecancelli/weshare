@@ -23,11 +23,15 @@ export async function GET(
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[api/sponsor] Supabase error", { slug: safeSlug, error });
+    return NextResponse.json(
+      { error: "Errore caricamento sponsor. Riprova tra poco." },
+      { status: 500 },
+    );
   }
   if (!data) {
     return NextResponse.json(
-      { error: "Sponsor non trovato" },
+      { error: "Sponsor non trovato. Verifica che il link sia corretto." },
       { status: 404 },
     );
   }

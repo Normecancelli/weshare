@@ -47,10 +47,16 @@ export default function InvitePage() {
     fetch(`/api/sponsor/${encodeURIComponent(cleanSlug)}`)
       .then((r) => r.json())
       .then((data) => {
-        if (data.sponsor) setSponsor(data.sponsor);
-        else setError(data.error || "Sponsor non trovato");
+        if (data.sponsor) {
+          setSponsor(data.sponsor);
+        } else {
+          const msg = typeof data.error === "string" && !data.error.startsWith("TypeError")
+            ? data.error
+            : "Sponsor non trovato. Verifica che il link sia corretto.";
+          setError(msg);
+        }
       })
-      .catch(() => setError("Errore caricamento sponsor"))
+      .catch(() => setError("Errore caricamento sponsor. Riprova tra poco."))
       .finally(() => setLoading(false));
   }, [slug, supabase]);
 
