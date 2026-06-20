@@ -52,7 +52,7 @@ Tabelle principali:
 - `column_mappings` — mapping header Excel → campi interni (configurabile)
 - `coadmin_flags` + `system_flags` — feature flag granulari
 
-**Migration applicate**: `002_ordini_clienti.sql`, `003_customer_dates.sql`, `004_product_images.sql`, `005_signup_eventi.sql` (slug, platino_riferimento, preferenze_notifiche).
+**Migration applicate**: `002_ordini_clienti.sql`, `003_customer_dates.sql`, `004_product_images.sql`, `005_signup_eventi.sql` (slug, platino_riferimento, preferenze_notifiche), `007_prospects.sql` (pipeline contatti/lead).
 
 **Storico ordini protetto**: ogni `client_order_items` salva `prezzo_unitario_cliente`, `prezzo_unitario_partner`, `punti_vp`, `provvigione` al momento dell'ordine. Importare un nuovo listino non altera lo storico.
 
@@ -69,6 +69,14 @@ Tabelle principali:
 - CRUD completo, modal `clienti/page.tsx` con form, gestione `customer_dates` inline (auto-flush della data pendente al click "Salva")
 - Card cliente con bottone WhatsApp (`wa.me`) tappabile e icona matita per modifica
 - Pannello dashboard "Date in arrivo" con next 60 giorni, badge urgenza colorato, bottone WA precompilato (template compleanno/anniversario/onomastico)
+
+### Contatti / Prospect (pipeline lead)
+- CRUD prospect su `/contatti` (tabella `prospects`, RLS `partner_id`)
+- Campi: nome, telefono, email, città, source (contatto_personale/lista/social/referenza/altro), note
+- Stato pipeline: nuovo_contatto → primo_appt → secondo_appt → convertito_cliente/convertito_partner/follow_up
+- Follow-up con sub-tag (interessato_non_ora/necessita_info/ha_detto_no/custom) + cadenza giorni + prossima_data_reminder
+- Vista desktop tabella + mobile card, filtri per stato + ricerca
+- **Phase 1 only**: appuntamenti, Google Calendar, email/WhatsApp, conversione e analytics sono Fasi 2-3 (vedi `docs/superpowers/specs/2026-06-20-prospects-design.md`)
 
 ### Prodotti
 - Catalogo 257 prodotti (`PriceList_April-2026_IT.xlsx`), ricerca multi-parola su descrizione+codice
