@@ -103,6 +103,12 @@ export default function ContattiPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => router.push("/contatti/analytics")}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-bg-section text-text-primary hover:bg-accent-glow transition-all"
+          >
+            Analytics
+          </button>
+          <button
             onClick={() => router.push("/contatti/follow-up")}
             className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-bg-section text-text-primary hover:bg-accent-glow transition-all"
           >
