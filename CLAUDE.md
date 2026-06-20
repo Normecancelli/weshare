@@ -80,7 +80,8 @@ Tabelle principali:
 - **Appuntamenti** (`prospect_appointments`): titolo, data/ora, durata, luogo, note + link "Aggiungi a Google Calendar" (URL prefillato, no OAuth — colonne `google_event_id`/`google_sync_status` riservate per sync futura)
 - **Messaggi follow-up**: template email/WhatsApp prefillati via `mailto:`/`wa.me` (no invio automatico), loggati in `prospect_messages`; ogni invio sposta `prossima_data_reminder` di `cadenza_giorni`
 - **Follow-up worklist** `/contatti/follow-up`: flag triage (da_valutare/inviare/non_inviare/sospeso) + bottoni invio
-- **Phase 3 (da fare)**: conversione cliente/partner + analytics (vedi `docs/superpowers/specs/2026-06-20-prospects-design.md`)
+- **Conversione**: pulsante "Converti" sulla detail page → a Cliente (crea `customers` row prefillata, link `prospects.customer_id`) o a Partner (mostra il link invito `/invite/[slug]` del partner da condividere via copia/email/WhatsApp). Stato → `convertito_cliente`/`convertito_partner`, `data_conversione` salvata. Guard anti-doppia-conversione.
+- **Analytics** `/contatti/analytics`: pipeline (barre per stato) + metriche conversione (% cliente, % partner, tempo medio gg, trend mese su mese). Isolato per partner.
 
 ### Prodotti
 - Catalogo 257 prodotti (`PriceList_April-2026_IT.xlsx`), ricerca multi-parola su descrizione+codice
