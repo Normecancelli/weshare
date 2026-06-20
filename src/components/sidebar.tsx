@@ -8,7 +8,6 @@ import {
   Users,
   Contact,
   Network,
-  UserPlus,
   Receipt,
   ShoppingCart,
   Package,
@@ -51,7 +50,6 @@ const menuSections: MenuSection[] = [
       { name: "I miei Clienti", icon: Users, href: "/clienti" },
       { name: "Contatti", icon: Contact, href: "/contatti" },
       { name: "Il mio Team", icon: Network, href: "/team" },
-      { name: "Prospect", icon: UserPlus, href: "/prospect" },
     ],
   },
   {
