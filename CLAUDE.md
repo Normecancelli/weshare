@@ -52,7 +52,7 @@ Tabelle principali:
 - `column_mappings` — mapping header Excel → campi interni (configurabile)
 - `coadmin_flags` + `system_flags` — feature flag granulari
 
-**Migration applicate**: `002_ordini_clienti.sql`, `003_customer_dates.sql`, `004_product_images.sql`, `005_signup_eventi.sql` (slug, platino_riferimento, preferenze_notifiche), `007_prospects.sql` (pipeline contatti/lead).
+**Migration applicate**: `002_ordini_clienti.sql`, `003_customer_dates.sql`, `004_product_images.sql`, `005_signup_eventi.sql` (slug, platino_riferimento, preferenze_notifiche), `007_prospects.sql` (pipeline contatti/lead), `008_prospect_appointments_messages.sql` (appuntamenti, messaggi, follow-up flag).
 
 **Storico ordini protetto**: ogni `client_order_items` salva `prezzo_unitario_cliente`, `prezzo_unitario_partner`, `punti_vp`, `provvigione` al momento dell'ordine. Importare un nuovo listino non altera lo storico.
 
@@ -76,7 +76,11 @@ Tabelle principali:
 - Stato pipeline: nuovo_contatto → primo_appt → secondo_appt → convertito_cliente/convertito_partner/follow_up
 - Follow-up con sub-tag (interessato_non_ora/necessita_info/ha_detto_no/custom) + cadenza giorni + prossima_data_reminder
 - Vista desktop tabella + mobile card, filtri per stato + ricerca
-- **Phase 1 only**: appuntamenti, Google Calendar, email/WhatsApp, conversione e analytics sono Fasi 2-3 (vedi `docs/superpowers/specs/2026-06-20-prospects-design.md`)
+- **Detail page** `/contatti/[id]`: edit info/pipeline + appuntamenti + messaggi recenti
+- **Appuntamenti** (`prospect_appointments`): titolo, data/ora, durata, luogo, note + link "Aggiungi a Google Calendar" (URL prefillato, no OAuth — colonne `google_event_id`/`google_sync_status` riservate per sync futura)
+- **Messaggi follow-up**: template email/WhatsApp prefillati via `mailto:`/`wa.me` (no invio automatico), loggati in `prospect_messages`; ogni invio sposta `prossima_data_reminder` di `cadenza_giorni`
+- **Follow-up worklist** `/contatti/follow-up`: flag triage (da_valutare/inviare/non_inviare/sospeso) + bottoni invio
+- **Phase 3 (da fare)**: conversione cliente/partner + analytics (vedi `docs/superpowers/specs/2026-06-20-prospects-design.md`)
 
 ### Prodotti
 - Catalogo 257 prodotti (`PriceList_April-2026_IT.xlsx`), ricerca multi-parola su descrizione+codice
