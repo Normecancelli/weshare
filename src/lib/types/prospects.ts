@@ -34,6 +34,7 @@ export interface Prospect {
   sub_tag_follow_up: ProspectSubTag | null;
   sub_tag_custom: string | null;
   cadenza_giorni: number;
+  follow_up_flag: FollowUpFlag;
   prossima_data_reminder: string | null;
   // Conversion columns (Phase 3 — present in DB, unused in Phase 1 UI)
   convertito_a: "cliente" | "partner" | null;
@@ -76,4 +77,37 @@ export const STATO_BADGE: Record<ProspectStato, string> = {
   convertito_cliente: "bg-[#dcfce7] text-[#166534]",
   convertito_partner: "bg-[#ffedd5] text-[#9a3412]",
   follow_up: "bg-[#fef9c3] text-[#854d0e]",
+};
+
+export type FollowUpFlag = "da_valutare" | "inviare" | "non_inviare" | "sospeso";
+
+export interface ProspectAppointment {
+  id: string;
+  prospect_id: string;
+  partner_id: string;
+  titolo: string;
+  data_ora: string;
+  durata_min: number;
+  location: string | null;
+  note: string | null;
+  google_event_id: string | null;
+  google_sync_status: "synced" | "pending" | "failed" | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProspectMessage {
+  id: string;
+  prospect_id: string;
+  partner_id: string;
+  tipo: "email" | "whatsapp";
+  template_id: string | null;
+  created_at: string;
+}
+
+export const FOLLOW_UP_FLAG_LABELS: Record<FollowUpFlag, string> = {
+  da_valutare: "Da valutare",
+  inviare: "Inviare",
+  non_inviare: "Non inviare",
+  sospeso: "Sospeso",
 };
