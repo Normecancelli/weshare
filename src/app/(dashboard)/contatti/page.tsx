@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   type Prospect,
   type ProspectStato,
   SOURCE_LABELS,
   STATO_LABELS,
   STATO_BADGE,
-  SUB_TAG_LABELS,
 } from "@/lib/types/prospects";
 
 const inputClass =
@@ -24,6 +24,7 @@ const STATO_FILTERS: (ProspectStato | "tutti")[] = [
 ];
 
 export default function ContattiPage() {
+  const router = useRouter();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -38,25 +39,6 @@ export default function ContattiPage() {
     source: "contatto_personale",
     note: "",
   });
-
-  // Edit modal state
-  const [editProspect, setEditProspect] = useState<Prospect | null>(null);
-  const [editForm, setEditForm] = useState({
-    nome: "",
-    telefono: "",
-    email: "",
-    citta: "",
-    source: "contatto_personale" as string,
-    note: "",
-    stato: "nuovo_contatto" as ProspectStato,
-    sub_tag_follow_up: "" as string,
-    sub_tag_custom: "",
-    cadenza_giorni: 14,
-    prossima_data_reminder: "",
-  });
-  const [editSaving, setEditSaving] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchProspects();
@@ -85,66 +67,6 @@ export default function ContattiPage() {
       fetchProspects();
     }
     setSaving(false);
-  }
-
-  function openEdit(p: Prospect) {
-    setEditProspect(p);
-    setEditForm({
-      nome: p.nome,
-      telefono: p.telefono || "",
-      email: p.email || "",
-      citta: p.citta || "",
-      source: p.source,
-      note: p.note || "",
-      stato: p.stato,
-      sub_tag_follow_up: p.sub_tag_follow_up || "",
-      sub_tag_custom: p.sub_tag_custom || "",
-      cadenza_giorni: p.cadenza_giorni,
-      prossima_data_reminder: p.prossima_data_reminder || "",
-    });
-    setConfirmDelete(false);
-  }
-
-  function closeEdit() {
-    setEditProspect(null);
-    setConfirmDelete(false);
-  }
-
-  async function handleUpdate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editProspect || !editForm.nome.trim()) return;
-    setEditSaving(true);
-    const payload = {
-      ...editForm,
-      sub_tag_follow_up:
-        editForm.stato === "follow_up" ? editForm.sub_tag_follow_up || null : null,
-      sub_tag_custom:
-        editForm.stato === "follow_up" && editForm.sub_tag_follow_up === "custom"
-          ? editForm.sub_tag_custom
-          : null,
-      prossima_data_reminder: editForm.prossima_data_reminder || null,
-    };
-    const res = await fetch(`/api/prospects/${editProspect.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      closeEdit();
-      fetchProspects();
-    }
-    setEditSaving(false);
-  }
-
-  async function handleDelete() {
-    if (!editProspect) return;
-    setDeleting(true);
-    const res = await fetch(`/api/prospects/${editProspect.id}`, { method: "DELETE" });
-    if (res.ok) {
-      closeEdit();
-      fetchProspects();
-    }
-    setDeleting(false);
   }
 
   const filtered = prospects.filter((p) => {
@@ -179,12 +101,20 @@ export default function ContattiPage() {
             {prospects.length} contatti nella pipeline
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
-        >
-          {showForm ? "Annulla" : "+ Nuovo Contatto"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push("/contatti/follow-up")}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-bg-section text-text-primary hover:bg-accent-glow transition-all"
+          >
+            Follow-up
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
+          >
+            {showForm ? "Annulla" : "+ Nuovo Contatto"}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -254,7 +184,7 @@ export default function ContattiPage() {
             {filtered.map((p) => (
               <tr
                 key={p.id}
-                onClick={() => openEdit(p)}
+                onClick={() => router.push(`/contatti/${p.id}`)}
                 className="border-b border-divider last:border-0 hover:bg-bg-section/50 transition-colors cursor-pointer"
               >
                 <td className="px-4 py-3 font-semibold text-text-primary">{p.nome}</td>
@@ -286,7 +216,7 @@ export default function ContattiPage() {
         {filtered.map((p) => (
           <button
             key={p.id}
-            onClick={() => openEdit(p)}
+            onClick={() => router.push(`/contatti/${p.id}`)}
             className="w-full text-left bg-bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:shadow-md hover:border-accent/30 transition-all"
           >
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center text-white text-sm font-bold shrink-0">
@@ -311,104 +241,6 @@ export default function ContattiPage() {
           {prospects.length === 0
             ? "Nessun contatto. Aggiungine uno con il bottone qui sopra."
             : "Nessun contatto trovato con i filtri attivi."}
-        </div>
-      )}
-
-      {/* Edit modal */}
-      {editProspect && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center pt-8 md:pt-16 px-4 overflow-y-auto">
-          <div className="bg-bg-card border border-border rounded-2xl w-full max-w-lg shadow-xl mb-8">
-            <div className="flex items-center justify-between p-5 border-b border-divider">
-              <h3 className="text-lg font-bold text-text-primary">Modifica contatto</h3>
-              <button onClick={closeEdit} className="w-8 h-8 rounded-lg hover:bg-bg-section flex items-center justify-center text-text-secondary transition-all">✕</button>
-            </div>
-
-            <form onSubmit={handleUpdate} className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-text-secondary mb-1 block">Nome *</label>
-                  <input type="text" value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} required className={inputClass} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-text-secondary mb-1 block">Telefono</label>
-                  <input type="tel" value={editForm.telefono} onChange={(e) => setEditForm({ ...editForm, telefono: e.target.value })} className={inputClass} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-text-secondary mb-1 block">Email</label>
-                  <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className={inputClass} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-text-secondary mb-1 block">Città</label>
-                  <input type="text" value={editForm.citta} onChange={(e) => setEditForm({ ...editForm, citta: e.target.value })} className={inputClass} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-text-secondary mb-1 block">Provenienza</label>
-                  <select value={editForm.source} onChange={(e) => setEditForm({ ...editForm, source: e.target.value })} className={inputClass}>
-                    {Object.entries(SOURCE_LABELS).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-text-secondary mb-1 block">Stato pipeline</label>
-                  <select value={editForm.stato} onChange={(e) => setEditForm({ ...editForm, stato: e.target.value as ProspectStato })} className={inputClass}>
-                    {Object.entries(STATO_LABELS).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
-                  </select>
-                </div>
-              </div>
-
-              {editForm.stato === "follow_up" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-divider pt-4">
-                  <div>
-                    <label className="text-xs font-semibold text-text-secondary mb-1 block">Motivo follow-up</label>
-                    <select value={editForm.sub_tag_follow_up} onChange={(e) => setEditForm({ ...editForm, sub_tag_follow_up: e.target.value })} className={inputClass}>
-                      <option value="">— seleziona —</option>
-                      {Object.entries(SUB_TAG_LABELS).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
-                    </select>
-                  </div>
-                  {editForm.sub_tag_follow_up === "custom" && (
-                    <div>
-                      <label className="text-xs font-semibold text-text-secondary mb-1 block">Specifica</label>
-                      <input type="text" value={editForm.sub_tag_custom} onChange={(e) => setEditForm({ ...editForm, sub_tag_custom: e.target.value })} className={inputClass} />
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-xs font-semibold text-text-secondary mb-1 block">Cadenza (giorni)</label>
-                    <input type="number" min={1} value={editForm.cadenza_giorni} onChange={(e) => setEditForm({ ...editForm, cadenza_giorni: parseInt(e.target.value) || 14 })} className={inputClass} />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="text-xs font-semibold text-text-secondary mb-1 block">Prossima azione (data)</label>
-                <input type="date" value={editForm.prossima_data_reminder} onChange={(e) => setEditForm({ ...editForm, prossima_data_reminder: e.target.value })} className={inputClass} />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-text-secondary mb-1 block">Note</label>
-                <textarea value={editForm.note} onChange={(e) => setEditForm({ ...editForm, note: e.target.value })} rows={2} className={`${inputClass} resize-none`} />
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-divider">
-                <div>
-                  {!confirmDelete ? (
-                    <button type="button" onClick={() => setConfirmDelete(true)} className="text-sm text-coral font-medium hover:opacity-70 transition-opacity">Elimina contatto</button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <button type="button" onClick={handleDelete} disabled={deleting} className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-coral text-white hover:opacity-80 transition-all disabled:opacity-50">
-                        {deleting ? "..." : "Conferma eliminazione"}
-                      </button>
-                      <button type="button" onClick={() => setConfirmDelete(false)} className="text-sm text-text-secondary hover:text-text-primary transition-colors">Annulla</button>
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={closeEdit} className="px-4 py-2 rounded-xl text-sm text-text-secondary hover:bg-bg-section transition-all">Annulla</button>
-                  <button type="submit" disabled={editSaving} className="px-5 py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all disabled:opacity-50">
-                    {editSaving ? "..." : "Salva"}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>
