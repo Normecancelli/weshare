@@ -15,6 +15,7 @@ import {
 import { buildGoogleCalendarUrl } from "@/lib/prospects/links";
 import { AppointmentFormModal } from "@/components/prospects/appointment-form-modal";
 import { MessageTemplateModal } from "@/components/prospects/message-template-modal";
+import { ConvertModal } from "@/components/prospects/convert-modal";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -47,6 +48,7 @@ export default function ContattoDetailPage() {
   const [showApptForm, setShowApptForm] = useState(false);
   const [editAppt, setEditAppt] = useState<ProspectAppointment | null>(null);
   const [msgModal, setMsgModal] = useState<"email" | "whatsapp" | null>(null);
+  const [showConvert, setShowConvert] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -155,6 +157,15 @@ export default function ContattoDetailPage() {
             </span>
           </div>
         </div>
+        {prospect.convertito_a ? (
+          <span className="text-xs font-semibold text-success">
+            ✓ Convertito a {prospect.convertito_a}
+          </span>
+        ) : (
+          <button onClick={() => setShowConvert(true)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-white hover:opacity-90 transition-all">
+            Converti
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6">
@@ -303,6 +314,14 @@ export default function ContattoDetailPage() {
           telefono={prospect.telefono}
           onSent={fetchAll}
           onClose={() => setMsgModal(null)}
+        />
+      )}
+
+      {showConvert && (
+        <ConvertModal
+          prospect={prospect}
+          onConverted={fetchAll}
+          onClose={() => setShowConvert(false)}
         />
       )}
     </div>
