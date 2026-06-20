@@ -111,3 +111,17 @@ export const FOLLOW_UP_FLAG_LABELS: Record<FollowUpFlag, string> = {
   non_inviare: "Non inviare",
   sospeso: "Sospeso",
 };
+
+export interface ProspectAnalytics {
+  pipeline: Record<ProspectStato, number>;
+  totale: number;
+  conversione: {
+    cliente: number;
+    partner: number;
+    cliente_percent: number;
+    partner_percent: number;
+    tempo_medio_giorni: number | null;
+    convertiti_questo_mese: number;
+    convertiti_mese_scorso: number;
+  };
+}
