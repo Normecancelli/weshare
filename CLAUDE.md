@@ -116,12 +116,17 @@ Tabelle principali:
 - Pannello "Date in arrivo" da `customer_dates`
 - VPG trend, top downline (da `monthly_data` se importato)
 
+### Branding
+- Icona app ufficiale generata dal logo WeShare (asset sorgente `docs/Weshare_icon_clipboard.png`, 500×500): `src/app/favicon.ico` (32×32, tab browser), `src/app/icon.png` (256×256, convenzione file Next.js), `src/app/apple-icon.png` (180×180, home screen iOS). Nessuna configurazione manuale in `layout.tsx` richiesta — Next.js le rileva ed espone automaticamente come `<link rel="icon">`/`apple-touch-icon`.
+
 ## Sessioni di lavoro (timeline)
 
 - **2026-06-09**: Ordini Clienti Phase 1 completata, fix bug salva data, componenti icone, sidebar mobile, ricerca prodotti, parser listino, pagina dettaglio ordine, dashboard responsive, pannello promemoria
 - **2026-06-10**: CRUD prodotti, role gate import, deploy iniziale, login+recovery+logout, modifica articoli ordine, WhatsApp AI base, OCR foto
 - **2026-06-11**: Dominio `metodo.growset.it`, Resend SMTP, rebrand "Me.To.Do for you®", picker manuale per "non riconosciuti" Francesca AI, design Sessione A+B+C
 - **2026-06-12**: ✅ **Sessione A completata** — signup flow end-to-end (`/invite/[slug]`, `/registrati`, `/benvenuto`), fix sanitizzazione slug Unicode
+- **2026-06-20/21**: Contatti/Prospect Fase 1+2+3 completate (CRUD pipeline, appuntamenti+Google Calendar link, email/WhatsApp template, follow-up worklist, conversione cliente/partner, analytics)
+- **2026-06-21**: Icona app ufficiale (favicon, icon.png, apple-icon.png) da logo WeShare
 
 ## Decisioni architetturali bloccate (per Sessione B + C)
 
