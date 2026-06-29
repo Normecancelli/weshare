@@ -11,8 +11,8 @@ Web app per la gestione delle attività del team Amway di **Alejerry (Alessandro
 
 ## Ambiente
 
-- **Repo**: https://github.com/Normecancelli/amway_partner_app — branch produzione `AMWAY.partner` (auto-redeploy ad ogni push)
-- **Dominio**: https://metodo.growset.it (fallback `amway-partner-app.vercel.app`). Migrazione futura prevista a `weshare.growset.it` — vedi TODO #9.
+- **Repo**: https://github.com/Normecancelli/weshare — branch produzione `AMWAY.partner` (auto-redeploy ad ogni push)
+- **Dominio**: https://weshare.growset.it (fallback `amway-partner-app.vercel.app`, vecchio `metodo.growset.it` ancora attivo in parallelo).
 - **Supabase project**: `ietxuhkkahnvcbchfspt` (region `eu-central-1`)
   - Dashboard: https://supabase.com/dashboard/project/ietxuhkkahnvcbchfspt
   - SQL editor, Auth users, Storage tutti da lì
@@ -240,11 +240,7 @@ CREATE TABLE event_attendees (
 6. **Modifica articoli ordine già confermato**: oggi non si può cambiare items di un ordine confermato. Da decidere se aprirlo per stato `confermato` o solo `bozza`
 7. **Wa.me intelligenti templates**: oltre al pannello promemoria, aggiungere template per "follow-up cliente", "sollecito ordine programmato" (zero infra, manual click)
 8. **OpenWA companion desktop** (rimandato): app desktop opt-in che gira sul Mac del partner, parla con la nostra API per template+contatti, usa OpenWA in locale per inviare. Modello distribuito = rischio per-utente
-9. **Migrazione dominio a `weshare.growset.it`** (manuale, da fare a brand consolidato). Step:
-   - **DNS** su `growset.it`: CNAME `weshare` → `cname.vercel-dns.com`
-   - **Vercel** (`normecancelli_team`): Settings → Domains → aggiungere `weshare.growset.it` al progetto; Vercel verifica DNS e genera SSL
-   - **Supabase** (`ietxuhkkahnvcbchfspt`): Auth → URL Configuration → Site URL = `https://weshare.growset.it`; aggiungere `https://weshare.growset.it/**` ai Redirect URLs; rivedere Email Templates (reset password, confirm) che i link puntino al nuovo dominio
-   - Tenere `metodo.growset.it` attivo in parallelo per qualche settimana (link già condivisi col team)
+9. ✅ **Migrazione dominio a `weshare.growset.it`** — completata 2026-06-29. DNS CNAME su Aruba, dominio aggiunto su Vercel, Site URL e Redirect URLs aggiornati su Supabase. Tenere `metodo.growset.it` attivo in parallelo qualche settimana per i link già condivisi.
 
 ## Convenzioni di codice
 
