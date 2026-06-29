@@ -1,7 +1,7 @@
 # Sessione B — Gestione Eventi (Design Spec)
 
 **Data**: 2026-06-29
-**Scope**: CRUD eventi, RSVP, lista iscritti, upload locandina, email reminder 24h via Vercel Cron + Resend.
+**Scope**: CRUD eventi, RSVP, lista iscritti, upload locandina (Supabase Storage), email reminder automatici (7gg + 1gg prima) + manuale on demand, template email globale modificabile + testo per-evento, preview HTML, WhatsApp singolo (wa.me) + copia broadcast gruppo, Vercel Cron + Resend.
 
 ---
 
@@ -136,7 +136,9 @@ Tutte in `src/app/api/events/`, sempre `supabase.auth.getUser()` prima della log
 | `/api/events/[id]/cover` | DELETE | Rimuovi locandina |
 | `/api/events/[id]/rsvp` | POST | Crea/aggiorna RSVP (`{ stato: confermato|forse|annullato }`) |
 | `/api/events/[id]/attendees` | GET | Lista iscritti (solo creatore/admin/topadmin/diamante) |
-| `/api/cron/event-reminders` | GET | Cron protetto da `CRON_SECRET`, manda email reminder |
+| `/api/events/[id]/remind` | POST | Reminder manuale immediato a tutti i confermati (creatore/admin/topadmin/diamante/platino) |
+| `/api/events/[id]/remind-preview` | GET | Preview HTML dell'email reminder (per modal anteprima) |
+| `/api/cron/event-reminders` | GET | Cron protetto da `CRON_SECRET`, manda email 7gg e 1gg prima |
 
 **`vercel.json`**:
 ```json
@@ -177,9 +179,11 @@ Tutte in `src/app/api/events/`, sempre `supabase.auth.getUser()` prima della log
 
 ---
 
+## 4. Reminder & Comunicazioni
+
 ---
 
-## 4b. Personalizzazione email reminder
+### 4a. Personalizzazione email reminder
 
 ### Template globale (base)
 - Pagina `/impostazioni/email-template` (admin/topadmin only) con editor del template HTML base
@@ -208,7 +212,7 @@ Tutte in `src/app/api/events/`, sempre `supabase.auth.getUser()` prima della log
 
 ---
 
-## 4c. WhatsApp reminder (no invio automatico — rischio ban)
+### 4b. WhatsApp reminder (no invio automatico — rischio ban)
 
 Stessa filosofia dei messaggi prospect: template pre-compilato, invio manuale dal platino/diamante.
 
@@ -248,7 +252,7 @@ Stessa filosofia dei messaggi prospect: template pre-compilato, invio manuale da
 
 ---
 
-## 4d. Reminder aggiuntivi (platino/diamante)
+### 4c. Reminder automatici e manuali
 
 **Automatici** — il cron gira ogni mattina alle 07:00 UTC e manda email in due occasioni:
 - **7 giorni prima** dell'evento (subject: `[Nome Evento] è tra 7 giorni!`)
@@ -292,6 +296,9 @@ export interface Evento {
   link_prenotazione: string | null;
   link_evento: string | null;
   locandina_url: string | null;
+  testo_reminder: string | null;
+  reminder_sent_7d: boolean;
+  reminder_sent_1d: boolean;
   visibilita: EventVisibilita;
   platino_id: string | null;
   creato_da: string;
@@ -308,7 +315,7 @@ export interface EventAttendee {
   stato: RsvpStato;
   responded_at: string;
   // join opzionale
-  profile?: { nome: string; email: string };
+  profile?: { nome: string; email: string; telefono: string | null };
 }
 ```
 
@@ -317,8 +324,9 @@ export interface EventAttendee {
 ## 6. Email Reminder
 
 **Mittente**: `noreply@growset.it` (dominio già verificato su Resend)
-**Subject**: `Reminder: [Nome Evento] è domani!`
-**Destinatari**: tutti gli attendees con `stato = 'confermato'` per eventi con `data_inizio` tra domani 00:00 e domani 23:59 UTC
+**Subject 7gg**: `[Nome Evento] è tra 7 giorni!`
+**Subject 1gg**: `Reminder: [Nome Evento] è domani!`
+**Destinatari**: tutti gli attendees con `stato = 'confermato'` per eventi nel giorno target (7gg o 1gg avanti)
 
 **Template** (HTML semplice, inline styles, branding Ocean Pro):
 - Header navy `#0B2545` con testo WeShare
@@ -370,6 +378,9 @@ supabase/
   migrations/
     006_eventi.sql
 vercel.json                       ← aggiunta cron schedule
+
+Pagine aggiuntive:
+  src/app/(dashboard)/impostazioni/email-template/page.tsx  ← editor template globale (admin/topadmin only)
 ```
 
 ---
