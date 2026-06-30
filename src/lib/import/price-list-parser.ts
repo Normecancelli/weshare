@@ -75,26 +75,53 @@ function detectLayout(sheet: XLSX.WorkSheet, rowIdx: number): Layout | null {
   return null;
 }
 
-/**
- * Parse the Amway price list Excel file.
- *
- * The file has a non-standard layout:
- * - Rows 1-55: title page and index (ignored)
- * - Row 56: column headers
- * - Row 57+: mix of category rows (text in A, no code) and product rows
- *   with TWO possible layouts: standard (code in B) and shifted (code in A,
- *   all other fields shifted -1 column).
- */
-export function parsePriceListExcel(buffer: ArrayBuffer): ParsedPriceList {
-  const workbook = XLSX.read(buffer, { type: "array" });
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
+// Detect if this is the "clean" simplified format:
+// Row 2 has headers: Categoria, Sottocategoria, Codice, Descrizione prodotto...
+// Data starts from row 5, 11 columns (A:K).
+function isCleanFormat(sheet: XLSX.WorkSheet): boolean {
+  const cell = sheet[XLSX.utils.encode_cell({ r: 1, c: 2 })]?.v; // R2, col C
+  return typeof cell === "string" && cell.trim().toLowerCase() === "codice";
+}
 
-  if (!sheet["!ref"]) {
-    throw new Error("Foglio vuoto nel file Excel");
+function parseCleanFormat(sheet: XLSX.WorkSheet): ParsedPriceList {
+  const range = XLSX.utils.decode_range(sheet["!ref"]!);
+  const products: ParsedProduct[] = [];
+  const categoriesSet = new Set<string>();
+
+  // A=0 Categoria, B=1 Sottocategoria, C=2 Codice, D=3 Descrizione,
+  // E=4 Contenuto, F=5 Prezzo Cliente, G=6 Provvigione, H=7 Prezzo Partner,
+  // I=8 Prezzo/unità, J=9 Punti VP, K=10 Volume VV
+  for (let rowIdx = 4; rowIdx <= range.e.r; rowIdx++) {
+    const read = (col: number) => sheet[XLSX.utils.encode_cell({ r: rowIdx, c: col })]?.v;
+
+    const codice = readCode(sheet, rowIdx, 2);
+    if (!codice) continue;
+
+    const descrizione = read(3);
+    if (!descrizione) continue;
+
+    const categoria = String(read(0) ?? "").trim();
+    if (categoria) categoriesSet.add(categoria);
+
+    products.push({
+      codice_amway: codice,
+      descrizione: String(descrizione).trim(),
+      categoria,
+      contenuto: read(4) != null ? String(read(4)).trim() : null,
+      prezzo_cliente: parseNumericValue(read(5)),
+      provvigione: parseNumericValue(read(6)),
+      prezzo_partner: parseNumericValue(read(7)),
+      prezzo_unita: read(8) != null ? String(read(8)).trim() : null,
+      punti_vp: parseNumericValue(read(9)),
+      volume_vv: parseNumericValue(read(10)),
+    });
   }
 
-  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  return { products, totalProducts: products.length, categories: Array.from(categoriesSet) };
+}
+
+function parseOriginalFormat(sheet: XLSX.WorkSheet): ParsedPriceList {
+  const range = XLSX.utils.decode_range(sheet["!ref"]!);
   const products: ParsedProduct[] = [];
   const categoriesSet = new Set<string>();
   let currentCategory = "";
@@ -103,7 +130,6 @@ export function parsePriceListExcel(buffer: ArrayBuffer): ParsedPriceList {
     const layout = detectLayout(sheet, rowIdx);
 
     if (!layout) {
-      // Category row: text in A, no numeric code anywhere
       const cellA = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 0 })]?.v;
       if (typeof cellA === "string" && cellA.trim().length > 2) {
         currentCategory = cellA.trim();
@@ -134,15 +160,26 @@ export function parsePriceListExcel(buffer: ArrayBuffer): ParsedPriceList {
     });
   }
 
-  if (products.length === 0) {
+  return { products, totalProducts: products.length, categories: Array.from(categoriesSet) };
+}
+
+export function parsePriceListExcel(buffer: ArrayBuffer): ParsedPriceList {
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+  if (!sheet["!ref"]) {
+    throw new Error("Foglio vuoto nel file Excel");
+  }
+
+  const result = isCleanFormat(sheet)
+    ? parseCleanFormat(sheet)
+    : parseOriginalFormat(sheet);
+
+  if (result.products.length === 0) {
     throw new Error(
       "Nessun prodotto trovato nel file. Verifica che sia un listino prezzi Amway."
     );
   }
 
-  return {
-    products,
-    totalProducts: products.length,
-    categories: Array.from(categoriesSet),
-  };
+  return result;
 }
