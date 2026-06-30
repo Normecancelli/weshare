@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserRole, isAdminRole } from "@/lib/auth/roles";
 
 async function authorize(
@@ -17,7 +18,7 @@ async function authorize(
       error: NextResponse.json({ error: "Non autenticato" }, { status: 401 }),
     };
   }
-  const role = await getUserRole(supabase, user.id);
+  const role = await getUserRole(createAdminClient(), user.id);
   if (!isAdminRole(role)) {
     return {
       error: NextResponse.json(
