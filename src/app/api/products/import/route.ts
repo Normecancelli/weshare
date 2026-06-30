@@ -108,22 +108,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Deactivate products not in the new list
-    const { data: allProducts } = await supabase
-      .from("products")
-      .select("id, codice_amway")
-      .eq("attivo", true);
-
+    // Deactivate products not in the new list (solo se import completo)
+    const partial = request.nextUrl.searchParams.get("partial") === "true";
     let deactivated = 0;
-    if (allProducts) {
-      const newCodes = new Set(allCodes);
-      for (const p of allProducts) {
-        if (!newCodes.has(p.codice_amway)) {
-          await supabase
-            .from("products")
-            .update({ attivo: false })
-            .eq("id", p.id);
-          deactivated++;
+    if (!partial) {
+      const { data: allProducts } = await supabase
+        .from("products")
+        .select("id, codice_amway")
+        .eq("attivo", true);
+
+      if (allProducts) {
+        const newCodes = new Set(allCodes);
+        for (const p of allProducts) {
+          if (!newCodes.has(p.codice_amway)) {
+            await supabase
+              .from("products")
+              .update({ attivo: false })
+              .eq("id", p.id);
+            deactivated++;
+          }
         }
       }
     }

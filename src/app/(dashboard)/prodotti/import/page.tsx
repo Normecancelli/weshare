@@ -22,6 +22,7 @@ export default function ProdottiImportPage() {
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [partial, setPartial] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -70,7 +71,10 @@ export default function ProdottiImportPage() {
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/products/import", {
+      const url = partial
+        ? "/api/products/import?partial=true"
+        : "/api/products/import";
+      const res = await fetch(url, {
         method: "POST",
         body: formData,
       });
@@ -108,9 +112,26 @@ export default function ProdottiImportPage() {
       <h2 className="text-2xl font-bold tracking-tight mb-2">
         Importa Listino Prezzi
       </h2>
-      <p className="text-text-secondary text-sm mb-8">
+      <p className="text-text-secondary text-sm mb-6">
         Carica il listino prezzi Amway in formato Excel
       </p>
+
+      <label className="flex items-center gap-3 mb-6 cursor-pointer select-none">
+        <div
+          onClick={() => setPartial((v) => !v)}
+          className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 ${partial ? "bg-accent" : "bg-border"}`}
+        >
+          <div className={`w-5 h-5 bg-white rounded-full shadow mt-0.5 transition-transform ${partial ? "translate-x-5.5" : "translate-x-0.5"}`} />
+        </div>
+        <div>
+          <span className="text-sm font-medium text-text-primary">Aggiornamento parziale</span>
+          <p className="text-xs text-text-secondary mt-0.5">
+            {partial
+              ? "Aggiorna/aggiunge solo i prodotti nel file — il resto del catalogo non viene toccato"
+              : "Listino completo — i prodotti non presenti nel file verranno disattivati"}
+          </p>
+        </div>
+      </label>
 
       <div
         onDragOver={(e) => {
