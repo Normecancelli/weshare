@@ -5,13 +5,12 @@ import { getUserRoleAndQualifica, canSendReminder } from "@/lib/auth/roles";
 import { buildReminderEmail } from "@/lib/events/email";
 import type { Evento } from "@/lib/types/events";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non autenticato" }, { status: 401 });

@@ -4,8 +4,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { buildReminderEmail } from "@/lib/events/email";
 import type { Evento } from "@/lib/types/events";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function getDayRange(daysAhead: number): { from: string; to: string } {
   const target = new Date();
   target.setDate(target.getDate() + daysAhead);
@@ -18,6 +16,7 @@ function getDayRange(daysAhead: number): { from: string; to: string } {
 
 async function sendRemindersForDay(
   supabase: ReturnType<typeof createAdminClient>,
+  resend: Resend,
   daysAhead: 1 | 7,
   globalTemplate: string | null
 ): Promise<number> {
@@ -70,13 +69,14 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const { data: flagData } = await supabase
     .from("system_flags").select("value").eq("flag_name", "email_reminder_template").single();
   const globalTemplate = flagData?.value as string | null;
 
-  const sent7d = await sendRemindersForDay(supabase, 7, globalTemplate);
-  const sent1d = await sendRemindersForDay(supabase, 1, globalTemplate);
+  const sent7d = await sendRemindersForDay(supabase, resend, 7, globalTemplate);
+  const sent1d = await sendRemindersForDay(supabase, resend, 1, globalTemplate);
 
   console.log(`[cron/event-reminders] sent: ${sent7d} (7gg) + ${sent1d} (1gg)`);
   return NextResponse.json({ sent_7d: sent7d, sent_1d: sent1d });
