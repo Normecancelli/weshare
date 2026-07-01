@@ -184,7 +184,10 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
               {userEmail}
             </div>
           )}
-          <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[var(--op-sidebar-text)] hover:bg-white/5 hover:text-white transition-all">
+          <button
+            onClick={() => router.push("/impostazioni/email-template")}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[var(--op-sidebar-text)] hover:bg-white/5 hover:text-white transition-all"
+          >
             <Settings size={18} strokeWidth={1.75} className="shrink-0" />
             Impostazioni
           </button>
