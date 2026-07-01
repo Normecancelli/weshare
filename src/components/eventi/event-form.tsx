@@ -34,6 +34,7 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(initial?.locandina_url || null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [form, setForm] = useState({
@@ -66,7 +67,11 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.nome.trim() || !form.data_inizio) return;
+    setError(null);
+    if (!form.nome.trim() || !form.data_inizio) {
+      setError("Nome e data di inizio sono obbligatori.");
+      return;
+    }
     setSaving(true);
     try {
       const payload: Partial<Evento> = {
@@ -96,6 +101,8 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
       }
 
       router.push(`/eventi/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Si è verificato un errore.");
     } finally {
       setSaving(false);
     }
@@ -239,6 +246,12 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
         />
         <p className="text-xs text-text-secondary mt-1">Verrà aggiunto in evidenza nelle email di reminder.</p>
       </div>
+
+      {error && (
+        <div className="bg-[#fee2e2] text-[#991b1b] text-sm px-4 py-2.5 rounded-xl">
+          {error}
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
