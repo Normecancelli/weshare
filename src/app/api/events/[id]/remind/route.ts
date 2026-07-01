@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserRoleAndQualifica, canSendReminder } from "@/lib/auth/roles";
 import { buildReminderEmail } from "@/lib/events/email";
 import type { Evento } from "@/lib/types/events";
@@ -12,6 +13,7 @@ export async function POST(
   const { id } = await params;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
 
@@ -19,17 +21,17 @@ export async function POST(
     .from("events").select("*").eq("id", id).single();
   if (!evento) return NextResponse.json({ error: "Evento non trovato" }, { status: 404 });
 
-  const { ruolo, qualifica } = await getUserRoleAndQualifica(supabase, user.id);
+  const { ruolo, qualifica } = await getUserRoleAndQualifica(admin, user.id);
   if (!canSendReminder(ruolo, qualifica, evento.creato_da, user.id)) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
   }
 
   // Carica template globale da system_flags (flag_name = chiave)
-  const { data: flagData } = await supabase
+  const { data: flagData } = await admin
     .from("system_flags").select("value").eq("flag_name", "email_reminder_template").single();
   const globalTemplate = flagData?.value as string | null;
 
-  const { data: attendees } = await supabase
+  const { data: attendees } = await admin
     .from("event_attendees")
     .select("*, profile:profiles!user_id(nome, email)")
     .eq("event_id", id)

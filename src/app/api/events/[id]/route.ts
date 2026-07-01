@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserRoleAndQualifica, canManageEvent } from "@/lib/auth/roles";
 
 export async function GET(
@@ -50,7 +51,7 @@ export async function PATCH(
     .from("events").select("creato_da").eq("id", id).single();
   if (!existing) return NextResponse.json({ error: "Evento non trovato" }, { status: 404 });
 
-  const { ruolo, qualifica } = await getUserRoleAndQualifica(supabase, user.id);
+  const { ruolo, qualifica } = await getUserRoleAndQualifica(createAdminClient(), user.id);
   if (!canManageEvent(ruolo, qualifica, existing.creato_da, user.id)) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
   }
@@ -89,7 +90,7 @@ export async function DELETE(
     .from("events").select("creato_da").eq("id", id).single();
   if (!existing) return NextResponse.json({ error: "Evento non trovato" }, { status: 404 });
 
-  const { ruolo, qualifica } = await getUserRoleAndQualifica(supabase, user.id);
+  const { ruolo, qualifica } = await getUserRoleAndQualifica(createAdminClient(), user.id);
   if (!canManageEvent(ruolo, qualifica, existing.creato_da, user.id)) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
   }
