@@ -22,6 +22,13 @@ interface Stats {
   totaleProvvigione: number;
 }
 
+interface DashboardStats {
+  totaleAnnoFiscale: number;
+  totaleMese: number;
+  cartCounts: { personale: number; non_registrato: number; programmato: number };
+  fiscalYearLabel: string;
+}
+
 export default function OrdiniClientiPage() {
   const [orders, setOrders] = useState<ClientOrder[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -38,9 +45,11 @@ export default function OrdiniClientiPage() {
   const [monthFilter, setMonthFilter] = useState("");
   const [productFilter, setProductFilter] = useState("");
   const [confirmingGroup, setConfirmingGroup] = useState<string | null>(null);
+  const [dashStats, setDashStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     fetchOrders();
+    fetchDashStats();
     fetch("/api/customers")
       .then((r) => r.json())
       .then((d) => setCustomers(d.customers || []));
@@ -53,6 +62,11 @@ export default function OrdiniClientiPage() {
     setOrders(data.orders || []);
     setStats(data.stats || stats);
     setLoading(false);
+  }
+
+  async function fetchDashStats() {
+    const res = await fetch("/api/client-orders/dashboard-stats");
+    if (res.ok) setDashStats(await res.json());
   }
 
   const monthOptions = useMemo(() => {
@@ -129,6 +143,7 @@ export default function OrdiniClientiPage() {
     });
     if (res.ok) {
       await fetchOrders();
+      await fetchDashStats();
     } else {
       const data = await res.json();
       alert(data.error || "Errore conferma invio");
@@ -248,6 +263,37 @@ export default function OrdiniClientiPage() {
           </a>
         </div>
       </div>
+
+      {/* Statistiche Amway: anno fiscale / mese / programmati */}
+      {dashStats && (
+        <div className="mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+            <StatCard
+              label={`Ordini anno fiscale Amway (${dashStats.fiscalYearLabel})`}
+              value={dashStats.totaleAnnoFiscale}
+              subtitle="Inviati su Amway"
+              color="accent"
+            />
+            <StatCard
+              label="Ordini del mese"
+              value={dashStats.totaleMese}
+              subtitle="Inviati su Amway"
+              color="accent"
+            />
+            <StatCard
+              label="Ordini programmati"
+              value={dashStats.cartCounts.programmato}
+              subtitle={`Personale: ${dashStats.cartCounts.personale} · Non registrato: ${dashStats.cartCounts.non_registrato}`}
+              color="lavender"
+            />
+          </div>
+          {dashStats.cartCounts.programmato > 0 && dashStats.cartCounts.programmato % 3 === 0 && (
+            <div className="bg-warning/10 text-warning text-sm px-4 py-3 rounded-xl">
+              🎉 Hai raggiunto il {dashStats.cartCounts.programmato}° ordine programmato inviato su Amway — sconto extra 15% disponibile sui prodotti idonei.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
