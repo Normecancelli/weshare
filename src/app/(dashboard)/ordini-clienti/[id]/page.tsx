@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { TrashIcon } from "@/components/icons";
 import { WhatsAppExtractor } from "@/components/whatsapp-extractor";
-import type { OrderItem } from "@/lib/types/orders";
+import { ProductSearch } from "@/components/ui/product-search";
+import type { OrderItem, Product } from "@/lib/types/orders";
 import type { ClientOrder, OrderChannel } from "@/lib/types/orders";
 
 const CHANNELS: { value: OrderChannel; label: string; icon: string }[] = [
@@ -34,6 +35,9 @@ export default function OrdineDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [updatingItem, setUpdatingItem] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [addingProduct, setAddingProduct] = useState(false);
+  const [vpWarning, setVpWarning] = useState<string | null>(null);
 
   const fetchOrder = useCallback(async () => {
     setLoading(true);
@@ -54,8 +58,15 @@ export default function OrdineDetailPage() {
     fetchOrder();
   }, [fetchOrder]);
 
+  useEffect(() => {
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((d) => setProducts(d.products || []));
+  }, []);
+
   const editable = order?.stato === "bozza" || order?.stato === "confermato";
   const deletable = order?.stato === "bozza" || order?.stato === "annullato";
+  const itemsEditable = order?.stato === "bozza" || order?.stato === "in_gruppo";
 
   async function handleSave() {
     if (!order) return;
@@ -88,7 +99,11 @@ export default function OrdineDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quantita: nextQty }),
     });
-    if (res.ok) await fetchOrder();
+    if (res.ok) {
+      const data = await res.json();
+      setVpWarning(data.warning || null);
+      await fetchOrder();
+    }
     setUpdatingItem(null);
   }
 
@@ -100,6 +115,24 @@ export default function OrdineDetailPage() {
     });
     if (res.ok) await fetchOrder();
     setUpdatingItem(null);
+  }
+
+  async function addProduct(product: Product) {
+    setAddingProduct(true);
+    const res = await fetch(`/api/client-orders/${id}/items`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_id: product.id, quantita: 1 }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setVpWarning(data.warning || null);
+      await fetchOrder();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Errore aggiunta prodotto");
+    }
+    setAddingProduct(false);
   }
 
   async function handleDelete() {
@@ -172,6 +205,18 @@ export default function OrdineDetailPage() {
         </span>
       </div>
 
+      {order.stato === "in_gruppo" && (
+        <div className="bg-[#E3F2FD] text-[#1976D2] text-sm px-4 py-3 rounded-xl mb-4">
+          Ordine già raggruppato. Puoi ancora aggiungere o modificare articoli finché il gruppo non viene caricato su Amway.
+        </div>
+      )}
+
+      {vpWarning && (
+        <div className="bg-warning/10 text-warning text-sm px-4 py-3 rounded-xl mb-4">
+          ⚠️ {vpWarning}
+        </div>
+      )}
+
       {/* Cliente + canale */}
       <section className="bg-bg-card border border-border rounded-2xl p-5 mb-4">
         <div className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Cliente</div>
@@ -200,21 +245,22 @@ export default function OrdineDetailPage() {
         </div>
       </section>
 
-      {/* WhatsApp Extractor — solo su bozze con canale WhatsApp */}
-      {order.stato === "bozza" && canale === "whatsapp" && (
+      {/* WhatsApp Extractor — su bozze e ordini raggruppati con canale WhatsApp */}
+      {itemsEditable && canale === "whatsapp" && (
         <WhatsAppExtractor
           onAddItems={async (extracted) => {
             for (const it of extracted) {
-              const res = await fetch("/api/client-orders/add-item", {
+              const res = await fetch(`/api/client-orders/${id}/items`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  customer_id: order.customer_id,
                   product_id: it.product_id,
                   quantita: it.quantita,
                 }),
               });
               if (!res.ok) throw new Error("Errore aggiunta articoli");
+              const data = await res.json();
+              if (data.warning) setVpWarning(data.warning);
             }
             await fetchOrder();
           }}
@@ -228,12 +274,21 @@ export default function OrdineDetailPage() {
             Articoli ({items.length})
           </div>
         </div>
+        {itemsEditable && (
+          <div className="mb-4">
+            <ProductSearch
+              products={products}
+              onSelect={addProduct}
+              placeholder={addingProduct ? "Aggiunta in corso..." : "Cerca prodotto da aggiungere..."}
+            />
+          </div>
+        )}
         {items.length === 0 ? (
           <p className="text-sm text-text-secondary">Nessun articolo</p>
         ) : (
           <div className="space-y-2">
             {items.map((it) => {
-              const isDraft = order.stato === "bozza";
+              const isDraft = itemsEditable;
               const busy = updatingItem === it.id;
               return (
                 <div
