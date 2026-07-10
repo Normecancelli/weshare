@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StatCard } from "@/components/ui/stat-card";
-import type { ClientOrder } from "@/lib/types/orders";
+import type { ClientOrder, Customer } from "@/lib/types/orders";
 
 type FilterTab = "tutti" | "bozza" | "confermato" | "completato";
+
+const inputClass =
+  "w-full px-3.5 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
+
+const MESI_IT = [
+  "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
+];
 
 interface Stats {
   totale: number;
@@ -25,9 +33,16 @@ export default function OrdiniClientiPage() {
   });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<FilterTab>("tutti");
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerFilter, setCustomerFilter] = useState("");
+  const [monthFilter, setMonthFilter] = useState("");
+  const [productFilter, setProductFilter] = useState("");
 
   useEffect(() => {
     fetchOrders();
+    fetch("/api/customers")
+      .then((r) => r.json())
+      .then((d) => setCustomers(d.customers || []));
   }, []);
 
   async function fetchOrders() {
@@ -39,10 +54,41 @@ export default function OrdiniClientiPage() {
     setLoading(false);
   }
 
-  const filtered =
-    tab === "tutti"
-      ? orders
-      : orders.filter((o) => o.stato === tab);
+  const monthOptions = useMemo(() => {
+    const set = new Set(orders.map((o) => o.created_at.slice(0, 7)));
+    return Array.from(set)
+      .sort((a, b) => b.localeCompare(a))
+      .map((ym) => {
+        const [year, month] = ym.split("-");
+        const label = `${MESI_IT[parseInt(month, 10) - 1]} ${year}`;
+        return { value: ym, label: label.charAt(0).toUpperCase() + label.slice(1) };
+      });
+  }, [orders]);
+
+  const filtersActive = Boolean(customerFilter || monthFilter || productFilter.trim());
+
+  function resetFilters() {
+    setCustomerFilter("");
+    setMonthFilter("");
+    setProductFilter("");
+  }
+
+  const filtered = orders.filter((o) => {
+    if (tab !== "tutti" && o.stato !== tab) return false;
+    if (customerFilter && o.customer_id !== customerFilter) return false;
+    if (monthFilter && o.created_at.slice(0, 7) !== monthFilter) return false;
+    if (productFilter.trim()) {
+      const q = productFilter.trim().toLowerCase();
+      const items = o.items || [];
+      const hasMatch = items.some((it) => {
+        const desc = it.product?.descrizione?.toLowerCase() || "";
+        const cod = it.product?.codice_amway?.toLowerCase() || "";
+        return desc.includes(q) || cod.includes(q);
+      });
+      if (!hasMatch) return false;
+    }
+    return true;
+  });
 
   const tabs: { key: FilterTab; label: string; count?: number }[] = [
     { key: "tutti", label: "Tutti", count: stats.totale },
@@ -161,6 +207,53 @@ export default function OrdiniClientiPage() {
             )}
           </button>
         ))}
+      </div>
+
+      {/* Filtri: cliente, mese, prodotto */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+        <select
+          value={customerFilter}
+          onChange={(e) => setCustomerFilter(e.target.value)}
+          className={`${inputClass} sm:max-w-[220px]`}
+        >
+          <option value="">Tutti i clienti</option>
+          {customers
+            .slice()
+            .sort((a, b) => a.nome.localeCompare(b.nome))
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome} {c.cognome || ""}
+              </option>
+            ))}
+        </select>
+        <select
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className={`${inputClass} sm:max-w-[180px]`}
+        >
+          <option value="">Tutti i mesi</option>
+          {monthOptions.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={productFilter}
+          onChange={(e) => setProductFilter(e.target.value)}
+          placeholder="Cerca prodotto..."
+          className={inputClass}
+        />
+        {filtersActive && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="px-3.5 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-accent whitespace-nowrap"
+          >
+            Azzera filtri
+          </button>
+        )}
       </div>
 
       {/* Orders list */}

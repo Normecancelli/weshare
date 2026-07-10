@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("client_orders")
     .select(
-      "*, customer:customers(id, nome, cognome, telefono)"
+      "*, customer:customers(id, nome, cognome, telefono), items:client_order_items(id, quantita, product:products(descrizione, codice_amway))"
     )
     .eq("partner_id", user.id)
     .order("created_at", { ascending: false });
