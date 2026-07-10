@@ -367,7 +367,7 @@ export default function OrdiniClientiPage() {
             <div key={g.groupId}>
               <div className="flex items-center justify-between gap-3 bg-accent-glow border border-accent/30 rounded-xl p-4 mb-2">
                 <div className="text-sm text-accent-hover font-semibold">
-                  Ordine raggruppato {idx + 1} · {g.orders.length} ordine{g.orders.length === 1 ? "" : "i"}
+                  Ordine raggruppato {idx + 1} · {g.orders.length} {g.orders.length === 1 ? "ordine" : "ordini"}
                 </div>
                 <button
                   type="button"
