@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { StatCard } from "@/components/ui/stat-card";
 import type { ClientOrder, Customer } from "@/lib/types/orders";
 
-type FilterTab = "tutti" | "bozza" | "confermato" | "completato";
+type FilterTab = "tutti" | "bozza" | "confermato" | "in_gruppo" | "completato";
 
 const inputClass =
   "w-full px-3.5 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -37,6 +37,7 @@ export default function OrdiniClientiPage() {
   const [customerFilter, setCustomerFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
   const [productFilter, setProductFilter] = useState("");
+  const [confirmingGroup, setConfirmingGroup] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -90,12 +91,40 @@ export default function OrdiniClientiPage() {
     return true;
   });
 
+  const daInviareCount = orders.filter((o) => o.stato === "in_gruppo").length;
+
   const tabs: { key: FilterTab; label: string; count?: number }[] = [
     { key: "tutti", label: "Tutti", count: stats.totale },
     { key: "bozza", label: "Bozze" },
     { key: "confermato", label: "Da raggruppare", count: stats.daRaggruppare },
-    { key: "completato", label: "Completati", count: stats.completati },
+    { key: "in_gruppo", label: "Da inviare", count: daInviareCount },
+    { key: "completato", label: "Inviati", count: stats.completati },
   ];
+
+  const groupsToConfirm = Array.from(
+    new Set(
+      filtered
+        .filter((o) => o.stato === "in_gruppo" && o.group_id)
+        .map((o) => o.group_id as string),
+    ),
+  ).map((groupId) => ({
+    groupId,
+    count: filtered.filter((o) => o.group_id === groupId).length,
+  }));
+
+  async function handleConfirmGroup(groupId: string) {
+    setConfirmingGroup(groupId);
+    const res = await fetch(`/api/order-groups/${groupId}/confirm`, {
+      method: "PUT",
+    });
+    if (res.ok) {
+      await fetchOrders();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Errore conferma invio");
+    }
+    setConfirmingGroup(null);
+  }
 
   function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString("it-IT", {
@@ -110,8 +139,8 @@ export default function OrdiniClientiPage() {
     const map: Record<string, { bg: string; text: string; label: string }> = {
       bozza: { bg: "bg-bg-section", text: "text-text-secondary", label: "Bozza" },
       confermato: { bg: "bg-accent-glow", text: "text-accent-hover", label: "Confermato" },
-      in_gruppo: { bg: "bg-[#E3F2FD]", text: "text-[#1976D2]", label: "In gruppo" },
-      completato: { bg: "bg-[#E8F5E9]", text: "text-success", label: "Completato" },
+      in_gruppo: { bg: "bg-[#E3F2FD]", text: "text-[#1976D2]", label: "Da inviare" },
+      completato: { bg: "bg-[#E8F5E9]", text: "text-success", label: "Inviato" },
       annullato: { bg: "bg-coral-soft", text: "text-coral", label: "Annullato" },
     };
     const s = map[stato] || map.bozza;
@@ -255,6 +284,30 @@ export default function OrdiniClientiPage() {
           </button>
         )}
       </div>
+
+      {/* Gruppi pronti da inviare su Amway */}
+      {tab === "in_gruppo" && groupsToConfirm.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {groupsToConfirm.map((g) => (
+            <div
+              key={g.groupId}
+              className="flex items-center justify-between gap-3 bg-accent-glow border border-accent/30 rounded-xl p-4"
+            >
+              <div className="text-sm text-accent-hover font-medium">
+                Gruppo con {g.count} ordine{g.count === 1 ? "" : "i"} pronto per l&apos;invio
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConfirmGroup(g.groupId)}
+                disabled={confirmingGroup === g.groupId}
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all disabled:opacity-50 whitespace-nowrap"
+              >
+                {confirmingGroup === g.groupId ? "..." : "✓ Segna come inviato"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Orders list */}
       {filtered.length === 0 ? (
