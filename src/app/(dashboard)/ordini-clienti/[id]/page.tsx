@@ -17,8 +17,8 @@ const CHANNELS: { value: OrderChannel; label: string; icon: string }[] = [
 const STATUS_LABEL: Record<string, { label: string; bg: string; text: string }> = {
   bozza: { label: "Bozza", bg: "bg-bg-section", text: "text-text-secondary" },
   confermato: { label: "Confermato", bg: "bg-accent-glow", text: "text-accent-hover" },
-  in_gruppo: { label: "In gruppo", bg: "bg-[#E3F2FD]", text: "text-[#1976D2]" },
-  completato: { label: "Completato", bg: "bg-[#E8F5E9]", text: "text-success" },
+  in_gruppo: { label: "Da inviare", bg: "bg-[#E3F2FD]", text: "text-[#1976D2]" },
+  completato: { label: "Inviato", bg: "bg-[#E8F5E9]", text: "text-success" },
   annullato: { label: "Annullato", bg: "bg-coral-soft", text: "text-coral" },
 };
 

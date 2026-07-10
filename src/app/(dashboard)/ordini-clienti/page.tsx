@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StatCard } from "@/components/ui/stat-card";
-import type { ClientOrder } from "@/lib/types/orders";
+import type { ClientOrder, Customer } from "@/lib/types/orders";
 
-type FilterTab = "tutti" | "bozza" | "confermato" | "completato";
+type FilterTab = "tutti" | "bozza" | "confermato" | "in_gruppo" | "completato";
+
+const inputClass =
+  "w-full px-3.5 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
+
+const MESI_IT = [
+  "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
+];
 
 interface Stats {
   totale: number;
@@ -12,6 +20,13 @@ interface Stats {
   completati: number;
   totaleVp: number;
   totaleProvvigione: number;
+}
+
+interface DashboardStats {
+  totaleAnnoFiscale: number;
+  totaleMese: number;
+  cartCounts: { personale: number; non_registrato: number; programmato: number };
+  fiscalYearLabel: string;
 }
 
 export default function OrdiniClientiPage() {
@@ -25,9 +40,19 @@ export default function OrdiniClientiPage() {
   });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<FilterTab>("tutti");
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerFilter, setCustomerFilter] = useState("");
+  const [monthFilter, setMonthFilter] = useState("");
+  const [productFilter, setProductFilter] = useState("");
+  const [confirmingGroup, setConfirmingGroup] = useState<string | null>(null);
+  const [dashStats, setDashStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     fetchOrders();
+    fetchDashStats();
+    fetch("/api/customers")
+      .then((r) => r.json())
+      .then((d) => setCustomers(d.customers || []));
   }, []);
 
   async function fetchOrders() {
@@ -39,17 +64,92 @@ export default function OrdiniClientiPage() {
     setLoading(false);
   }
 
-  const filtered =
-    tab === "tutti"
-      ? orders
-      : orders.filter((o) => o.stato === tab);
+  async function fetchDashStats() {
+    const res = await fetch("/api/client-orders/dashboard-stats");
+    if (res.ok) setDashStats(await res.json());
+  }
+
+  const monthOptions = useMemo(() => {
+    const set = new Set(orders.map((o) => o.created_at.slice(0, 7)));
+    return Array.from(set)
+      .sort((a, b) => b.localeCompare(a))
+      .map((ym) => {
+        const [year, month] = ym.split("-");
+        const label = `${MESI_IT[parseInt(month, 10) - 1]} ${year}`;
+        return { value: ym, label: label.charAt(0).toUpperCase() + label.slice(1) };
+      });
+  }, [orders]);
+
+  const filtersActive = Boolean(customerFilter || monthFilter || productFilter.trim());
+
+  function resetFilters() {
+    setCustomerFilter("");
+    setMonthFilter("");
+    setProductFilter("");
+  }
+
+  const filtered = orders.filter((o) => {
+    if (tab !== "tutti" && o.stato !== tab) return false;
+    if (customerFilter && o.customer_id !== customerFilter) return false;
+    if (monthFilter && o.created_at.slice(0, 7) !== monthFilter) return false;
+    if (productFilter.trim()) {
+      const q = productFilter.trim().toLowerCase();
+      const items = o.items || [];
+      const hasMatch = items.some((it) => {
+        const desc = it.product?.descrizione?.toLowerCase() || "";
+        const cod = it.product?.codice_amway?.toLowerCase() || "";
+        return desc.includes(q) || cod.includes(q);
+      });
+      if (!hasMatch) return false;
+    }
+    return true;
+  });
+
+  const daInviareCount = orders.filter((o) => o.stato === "in_gruppo").length;
 
   const tabs: { key: FilterTab; label: string; count?: number }[] = [
     { key: "tutti", label: "Tutti", count: stats.totale },
     { key: "bozza", label: "Bozze" },
     { key: "confermato", label: "Da raggruppare", count: stats.daRaggruppare },
-    { key: "completato", label: "Completati", count: stats.completati },
+    { key: "in_gruppo", label: "Da inviare", count: daInviareCount },
+    { key: "completato", label: "Inviati", count: stats.completati },
   ];
+
+  const groupedOrders = useMemo(() => {
+    const map = new Map<string, ClientOrder[]>();
+    for (const o of filtered) {
+      if (o.stato !== "in_gruppo" || !o.group_id) continue;
+      if (!map.has(o.group_id)) map.set(o.group_id, []);
+      map.get(o.group_id)!.push(o);
+    }
+    return Array.from(map.entries())
+      .map(([groupId, groupOrders]) => ({
+        groupId,
+        orders: groupOrders
+          .slice()
+          .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+      }))
+      .sort((a, b) => {
+        const aMax = Math.max(...a.orders.map((o) => new Date(o.created_at).getTime()));
+        const bMax = Math.max(...b.orders.map((o) => new Date(o.created_at).getTime()));
+        return bMax - aMax;
+      });
+  }, [filtered]);
+
+  async function handleConfirmGroup(groupId: string) {
+    setConfirmingGroup(groupId);
+    const res = await fetch(`/api/order-groups/${groupId}/confirm`, {
+      method: "PUT",
+    });
+    if (res.ok) {
+      await fetchOrders();
+      await fetchDashStats();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Errore conferma invio");
+    }
+    setConfirmingGroup(null);
+  }
 
   function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString("it-IT", {
@@ -64,8 +164,8 @@ export default function OrdiniClientiPage() {
     const map: Record<string, { bg: string; text: string; label: string }> = {
       bozza: { bg: "bg-bg-section", text: "text-text-secondary", label: "Bozza" },
       confermato: { bg: "bg-accent-glow", text: "text-accent-hover", label: "Confermato" },
-      in_gruppo: { bg: "bg-[#E3F2FD]", text: "text-[#1976D2]", label: "In gruppo" },
-      completato: { bg: "bg-[#E8F5E9]", text: "text-success", label: "Completato" },
+      in_gruppo: { bg: "bg-[#E3F2FD]", text: "text-[#1976D2]", label: "Da inviare" },
+      completato: { bg: "bg-[#E8F5E9]", text: "text-success", label: "Inviato" },
       annullato: { bg: "bg-coral-soft", text: "text-coral", label: "Annullato" },
     };
     const s = map[stato] || map.bozza;
@@ -81,6 +181,51 @@ export default function OrdiniClientiPage() {
     if (canale === "presenza") return "🤝";
     if (canale === "telefono") return "📞";
     return "";
+  }
+
+  function renderOrderCard(order: ClientOrder) {
+    const customer = order.customer;
+    const customerName = customer
+      ? `${customer.nome} ${customer.cognome || ""}`.trim()
+      : "Cliente";
+
+    return (
+      <a
+        key={order.id}
+        href={`/ordini-clienti/${order.id}`}
+        className="block bg-bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm text-text-primary">
+              {customerName}
+            </span>
+            {order.canale && (
+              <span className="text-sm" title={order.canale}>
+                {channelIcon(order.canale)}
+              </span>
+            )}
+          </div>
+          {statusBadge(order.stato)}
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-text-secondary">
+            {formatDate(order.created_at)}
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="font-semibold text-text-primary">
+              {"€"}{order.totale_cliente.toFixed(2)}
+            </span>
+            <span className="text-accent-hover font-semibold">
+              {order.totale_vp.toFixed(2)} VP
+            </span>
+            <span className="text-success font-semibold">
+              +€{order.totale_provvigione.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </a>
+    );
   }
 
   if (loading) {
@@ -118,6 +263,37 @@ export default function OrdiniClientiPage() {
           </a>
         </div>
       </div>
+
+      {/* Statistiche Amway: anno fiscale / mese / programmati */}
+      {dashStats && (
+        <div className="mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+            <StatCard
+              label={`Ordini anno fiscale Amway (${dashStats.fiscalYearLabel})`}
+              value={dashStats.totaleAnnoFiscale}
+              subtitle="Inviati su Amway"
+              color="accent"
+            />
+            <StatCard
+              label="Ordini del mese"
+              value={dashStats.totaleMese}
+              subtitle="Inviati su Amway"
+              color="accent"
+            />
+            <StatCard
+              label="Ordini programmati"
+              value={dashStats.cartCounts.programmato}
+              subtitle={`Personale: ${dashStats.cartCounts.personale} · Non registrato: ${dashStats.cartCounts.non_registrato}`}
+              color="lavender"
+            />
+          </div>
+          {dashStats.cartCounts.programmato > 0 && dashStats.cartCounts.programmato % 3 === 0 && (
+            <div className="bg-warning/10 text-warning text-sm px-4 py-3 rounded-xl">
+              🎉 Hai raggiunto il {dashStats.cartCounts.programmato}° ordine programmato inviato su Amway — sconto extra 15% disponibile sui prodotti idonei.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -163,6 +339,53 @@ export default function OrdiniClientiPage() {
         ))}
       </div>
 
+      {/* Filtri: cliente, mese, prodotto */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+        <select
+          value={customerFilter}
+          onChange={(e) => setCustomerFilter(e.target.value)}
+          className={`${inputClass} sm:max-w-[220px]`}
+        >
+          <option value="">Tutti i clienti</option>
+          {customers
+            .slice()
+            .sort((a, b) => a.nome.localeCompare(b.nome))
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome} {c.cognome || ""}
+              </option>
+            ))}
+        </select>
+        <select
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className={`${inputClass} sm:max-w-[180px]`}
+        >
+          <option value="">Tutti i mesi</option>
+          {monthOptions.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={productFilter}
+          onChange={(e) => setProductFilter(e.target.value)}
+          placeholder="Cerca prodotto..."
+          className={inputClass}
+        />
+        {filtersActive && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="px-3.5 py-2.5 rounded-xl text-sm font-medium text-text-secondary hover:text-accent whitespace-nowrap"
+          >
+            Azzera filtri
+          </button>
+        )}
+      </div>
+
       {/* Orders list */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
@@ -184,53 +407,31 @@ export default function OrdiniClientiPage() {
             </a>
           )}
         </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((order) => {
-            const customer = order.customer;
-            const customerName = customer
-              ? `${customer.nome} ${customer.cognome || ""}`.trim()
-              : "Cliente";
-
-            return (
-              <a
-                key={order.id}
-                href={`/ordini-clienti/${order.id}`}
-                className="block bg-bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-text-primary">
-                      {customerName}
-                    </span>
-                    {order.canale && (
-                      <span className="text-sm" title={order.canale}>
-                        {channelIcon(order.canale)}
-                      </span>
-                    )}
-                  </div>
-                  {statusBadge(order.stato)}
+      ) : tab === "in_gruppo" ? (
+        <div className="space-y-6">
+          {groupedOrders.map((g, idx) => (
+            <div key={g.groupId}>
+              <div className="flex items-center justify-between gap-3 bg-accent-glow border border-accent/30 rounded-xl p-4 mb-2">
+                <div className="text-sm text-accent-hover font-semibold">
+                  Ordine raggruppato {idx + 1} · {g.orders.length} {g.orders.length === 1 ? "ordine" : "ordini"}
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-text-secondary">
-                    {formatDate(order.created_at)}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="font-semibold text-text-primary">
-                      {"€"}{order.totale_cliente.toFixed(2)}
-                    </span>
-                    <span className="text-accent-hover font-semibold">
-                      {order.totale_vp.toFixed(2)} VP
-                    </span>
-                    <span className="text-success font-semibold">
-                      +€{order.totale_provvigione.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </a>
-            );
-          })}
+                <button
+                  type="button"
+                  onClick={() => handleConfirmGroup(g.groupId)}
+                  disabled={confirmingGroup === g.groupId}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all disabled:opacity-50 whitespace-nowrap"
+                >
+                  {confirmingGroup === g.groupId ? "..." : "✓ Segna come inviato"}
+                </button>
+              </div>
+              <div className="space-y-2 pl-3 border-l-2 border-accent/20 ml-2">
+                {g.orders.map((order) => renderOrderCard(order))}
+              </div>
+            </div>
+          ))}
         </div>
+      ) : (
+        <div className="space-y-2">{filtered.map((order) => renderOrderCard(order))}</div>
       )}
     </div>
   );
