@@ -101,16 +101,26 @@ export default function OrdiniClientiPage() {
     { key: "completato", label: "Inviati", count: stats.completati },
   ];
 
-  const groupsToConfirm = Array.from(
-    new Set(
-      filtered
-        .filter((o) => o.stato === "in_gruppo" && o.group_id)
-        .map((o) => o.group_id as string),
-    ),
-  ).map((groupId) => ({
-    groupId,
-    count: filtered.filter((o) => o.group_id === groupId).length,
-  }));
+  const groupedOrders = useMemo(() => {
+    const map = new Map<string, ClientOrder[]>();
+    for (const o of filtered) {
+      if (o.stato !== "in_gruppo" || !o.group_id) continue;
+      if (!map.has(o.group_id)) map.set(o.group_id, []);
+      map.get(o.group_id)!.push(o);
+    }
+    return Array.from(map.entries())
+      .map(([groupId, groupOrders]) => ({
+        groupId,
+        orders: groupOrders
+          .slice()
+          .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+      }))
+      .sort((a, b) => {
+        const aMax = Math.max(...a.orders.map((o) => new Date(o.created_at).getTime()));
+        const bMax = Math.max(...b.orders.map((o) => new Date(o.created_at).getTime()));
+        return bMax - aMax;
+      });
+  }, [filtered]);
 
   async function handleConfirmGroup(groupId: string) {
     setConfirmingGroup(groupId);
@@ -156,6 +166,51 @@ export default function OrdiniClientiPage() {
     if (canale === "presenza") return "🤝";
     if (canale === "telefono") return "📞";
     return "";
+  }
+
+  function renderOrderCard(order: ClientOrder) {
+    const customer = order.customer;
+    const customerName = customer
+      ? `${customer.nome} ${customer.cognome || ""}`.trim()
+      : "Cliente";
+
+    return (
+      <a
+        key={order.id}
+        href={`/ordini-clienti/${order.id}`}
+        className="block bg-bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm text-text-primary">
+              {customerName}
+            </span>
+            {order.canale && (
+              <span className="text-sm" title={order.canale}>
+                {channelIcon(order.canale)}
+              </span>
+            )}
+          </div>
+          {statusBadge(order.stato)}
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-text-secondary">
+            {formatDate(order.created_at)}
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="font-semibold text-text-primary">
+              {"€"}{order.totale_cliente.toFixed(2)}
+            </span>
+            <span className="text-accent-hover font-semibold">
+              {order.totale_vp.toFixed(2)} VP
+            </span>
+            <span className="text-success font-semibold">
+              +€{order.totale_provvigione.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </a>
+    );
   }
 
   if (loading) {
@@ -285,30 +340,6 @@ export default function OrdiniClientiPage() {
         )}
       </div>
 
-      {/* Gruppi pronti da inviare su Amway */}
-      {tab === "in_gruppo" && groupsToConfirm.length > 0 && (
-        <div className="space-y-2 mb-4">
-          {groupsToConfirm.map((g) => (
-            <div
-              key={g.groupId}
-              className="flex items-center justify-between gap-3 bg-accent-glow border border-accent/30 rounded-xl p-4"
-            >
-              <div className="text-sm text-accent-hover font-medium">
-                Gruppo con {g.count} ordine{g.count === 1 ? "" : "i"} pronto per l&apos;invio
-              </div>
-              <button
-                type="button"
-                onClick={() => handleConfirmGroup(g.groupId)}
-                disabled={confirmingGroup === g.groupId}
-                className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all disabled:opacity-50 whitespace-nowrap"
-              >
-                {confirmingGroup === g.groupId ? "..." : "✓ Segna come inviato"}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Orders list */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
@@ -330,53 +361,31 @@ export default function OrdiniClientiPage() {
             </a>
           )}
         </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((order) => {
-            const customer = order.customer;
-            const customerName = customer
-              ? `${customer.nome} ${customer.cognome || ""}`.trim()
-              : "Cliente";
-
-            return (
-              <a
-                key={order.id}
-                href={`/ordini-clienti/${order.id}`}
-                className="block bg-bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-text-primary">
-                      {customerName}
-                    </span>
-                    {order.canale && (
-                      <span className="text-sm" title={order.canale}>
-                        {channelIcon(order.canale)}
-                      </span>
-                    )}
-                  </div>
-                  {statusBadge(order.stato)}
+      ) : tab === "in_gruppo" ? (
+        <div className="space-y-6">
+          {groupedOrders.map((g, idx) => (
+            <div key={g.groupId}>
+              <div className="flex items-center justify-between gap-3 bg-accent-glow border border-accent/30 rounded-xl p-4 mb-2">
+                <div className="text-sm text-accent-hover font-semibold">
+                  Ordine raggruppato {idx + 1} · {g.orders.length} ordine{g.orders.length === 1 ? "" : "i"}
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-text-secondary">
-                    {formatDate(order.created_at)}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="font-semibold text-text-primary">
-                      {"€"}{order.totale_cliente.toFixed(2)}
-                    </span>
-                    <span className="text-accent-hover font-semibold">
-                      {order.totale_vp.toFixed(2)} VP
-                    </span>
-                    <span className="text-success font-semibold">
-                      +€{order.totale_provvigione.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </a>
-            );
-          })}
+                <button
+                  type="button"
+                  onClick={() => handleConfirmGroup(g.groupId)}
+                  disabled={confirmingGroup === g.groupId}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all disabled:opacity-50 whitespace-nowrap"
+                >
+                  {confirmingGroup === g.groupId ? "..." : "✓ Segna come inviato"}
+                </button>
+              </div>
+              <div className="space-y-2 pl-3 border-l-2 border-accent/20 ml-2">
+                {g.orders.map((order) => renderOrderCard(order))}
+              </div>
+            </div>
+          ))}
         </div>
+      ) : (
+        <div className="space-y-2">{filtered.map((order) => renderOrderCard(order))}</div>
       )}
     </div>
   );

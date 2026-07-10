@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -81,11 +81,16 @@ type SidebarProps = {
   onCloseMobile?: () => void;
 };
 
+function isItemActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
-  const [active, setActive] = useState("Dashboard");
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
 
   useEffect(() => {
@@ -94,8 +99,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
     });
   }, [supabase]);
 
-  function handleNav(name: string, href: string) {
-    setActive(name);
+  function handleNav(href: string) {
     router.push(href);
     onCloseMobile?.();
   }
@@ -153,11 +157,11 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
               </div>
               {section.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = active === item.name;
+                const isActive = isItemActive(pathname, item.href);
                 return (
                   <button
                     key={item.name}
-                    onClick={() => handleNav(item.name, item.href)}
+                    onClick={() => handleNav(item.href)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${
                       isActive
                         ? "bg-[var(--op-sidebar-active)] text-white font-semibold"
