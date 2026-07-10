@@ -34,3 +34,22 @@ export async function recomputeOrderTotals(
     })
     .eq("id", orderId);
 }
+
+// Somma i VP del carrello "personale" di un gruppo. Usato per avvisare
+// (non bloccare) quando un'aggiunta post-raggruppamento sfora i 510 VP.
+export async function computeGroupPersonaleVp(
+  supabase: SupabaseClient,
+  groupId: string,
+) {
+  const { data } = await supabase
+    .from("group_items")
+    .select("order_item:client_order_items(quantita, punti_vp)")
+    .eq("group_id", groupId)
+    .eq("carrello", "personale")
+    .returns<{ order_item: { quantita: number; punti_vp: number } | null }[]>();
+
+  return (data || []).reduce(
+    (sum, gi) => sum + (gi.order_item?.punti_vp || 0) * (gi.order_item?.quantita || 0),
+    0,
+  );
+}

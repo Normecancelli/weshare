@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { recomputeOrderTotals } from "@/lib/orders/totals";
+import { recomputeOrderTotals, computeGroupPersonaleVp } from "@/lib/orders/totals";
+
+const EDITABLE_STATES = ["bozza", "in_gruppo"];
+const VP_LIMIT_PERSONALE = 510;
 
 async function authorizeOrder(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -9,7 +12,7 @@ async function authorizeOrder(
 ) {
   const { data } = await supabase
     .from("client_orders")
-    .select("id, stato")
+    .select("id, stato, group_id")
     .eq("id", orderId)
     .eq("partner_id", userId)
     .single();
@@ -34,9 +37,9 @@ export async function PATCH(
   if (!order) {
     return NextResponse.json({ error: "Ordine non trovato" }, { status: 404 });
   }
-  if (order.stato !== "bozza") {
+  if (!EDITABLE_STATES.includes(order.stato)) {
     return NextResponse.json(
-      { error: "Solo le bozze possono essere modificate" },
+      { error: "Ordine non modificabile in questo stato" },
       { status: 409 },
     );
   }
@@ -68,7 +71,15 @@ export async function PATCH(
 
   await recomputeOrderTotals(supabase, id);
 
-  return NextResponse.json({ success: true });
+  let warning: string | null = null;
+  if (order.stato === "in_gruppo" && order.group_id) {
+    const vpPersonale = await computeGroupPersonaleVp(supabase, order.group_id);
+    if (vpPersonale > VP_LIMIT_PERSONALE) {
+      warning = `Il carrello "Personale" del gruppo ha superato ${VP_LIMIT_PERSONALE} VP (${vpPersonale.toFixed(2)} VP).`;
+    }
+  }
+
+  return NextResponse.json({ success: true, warning });
 }
 
 export async function DELETE(
@@ -89,9 +100,9 @@ export async function DELETE(
   if (!order) {
     return NextResponse.json({ error: "Ordine non trovato" }, { status: 404 });
   }
-  if (order.stato !== "bozza") {
+  if (!EDITABLE_STATES.includes(order.stato)) {
     return NextResponse.json(
-      { error: "Solo le bozze possono essere modificate" },
+      { error: "Ordine non modificabile in questo stato" },
       { status: 409 },
     );
   }
