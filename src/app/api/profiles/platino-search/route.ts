@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// Cerca profili con qualifica platino o superiore (smeraldo / diamante).
-// Pubblico — usato nel form di registrazione per l'autocomplete.
-// Ritorna SOLO campi sicuri (id, nome, codice, qualifica). No email, no telefono.
+// Cerca profili con qualifica platino o superiore (smeraldo / diamante),
+// oppure solo diamante se ?solo=diamante è passato (usato dall'autocomplete
+// "Diamante di riferimento" in Impostazioni).
+// Pubblico — usato anche nel form di registrazione. Ritorna SOLO campi
+// sicuri (id, nome, codice, qualifica). No email, no telefono.
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim() || "";
+  const solo = request.nextUrl.searchParams.get("solo");
   const supabase = createAdminClient();
+
+  const qualifiche = solo === "diamante" ? ["diamante"] : ["platino", "smeraldo", "diamante"];
 
   let query = supabase
     .from("profiles")
     .select("id, codice_amway, nome, qualifica")
-    .in("qualifica", ["platino", "smeraldo", "diamante"])
+    .in("qualifica", qualifiche)
     .order("nome")
     .limit(20);
 
