@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 
@@ -103,6 +104,12 @@ export default function ImpostazioniPage() {
   const avatarFileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
+  const router = useRouter();
+  const [hasAnthropicKey, setHasAnthropicKey] = useState(false);
+  const [aiGenerationsRemaining, setAiGenerationsRemaining] = useState<number | null>(5);
+  const [anthropicKeyInput, setAnthropicKeyInput] = useState("");
+  const [savingKey, setSavingKey] = useState(false);
+
   async function handleAvatarUpload(file: File) {
     setAvatarUploading(true);
     const fd = new FormData();
@@ -147,12 +154,15 @@ export default function ImpostazioniPage() {
           data_ingresso: p.data_ingresso ? p.data_ingresso.slice(0, 10) : "",
           platino_riferimento_id: p.platino_riferimento_id || "",
           diamante_riferimento_id: p.diamante_riferimento_id || "",
-          preferenze_notifiche: p.preferenze_notifiche || {
+          preferenze_notifiche: {
             reminder_eventi: true,
             riepilogo_settimanale: true,
             date_clienti: true,
+            ...(p.preferenze_notifiche || {}),
           },
         });
+        setHasAnthropicKey(d.hasAnthropicKey);
+        setAiGenerationsRemaining(d.aiGenerationsRemaining);
         setLoading(false);
       });
   }, []);
@@ -189,6 +199,49 @@ export default function ImpostazioniPage() {
     });
     setSaving(false);
     showToast(res.ok ? "Modifiche salvate" : "Errore durante il salvataggio");
+  }
+
+  async function handleSalvaChiave() {
+    if (!anthropicKeyInput.trim()) return;
+    setSavingKey(true);
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ anthropic_api_key: anthropicKeyInput.trim() }),
+    });
+    setSavingKey(false);
+    if (res.ok) {
+      setHasAnthropicKey(true);
+      setAiGenerationsRemaining(null);
+      setAnthropicKeyInput("");
+      showToast("Chiave AI salvata");
+    } else {
+      showToast("Errore salvataggio chiave");
+    }
+  }
+
+  async function handleRimuoviChiave() {
+    setSavingKey(true);
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ anthropic_api_key: null }),
+    });
+    setSavingKey(false);
+    if (res.ok) {
+      const fresh = await fetch("/api/profile").then((r) => r.json());
+      setHasAnthropicKey(fresh.hasAnthropicKey);
+      setAiGenerationsRemaining(fresh.aiGenerationsRemaining);
+      showToast("Chiave AI rimossa");
+    }
+  }
+
+  async function handleLogout() {
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
   }
 
   if (loading || !profile) {
@@ -299,6 +352,7 @@ export default function ImpostazioniPage() {
           <input
             className={inputClass}
             placeholder="Cerca per nome o codice…"
+            autoComplete="nope"
             value={platinoAc.open ? platinoAc.query : platinoNome}
             onFocus={() => platinoAc.setOpen(true)}
             onChange={(e) => { platinoAc.setQuery(e.target.value); platinoAc.setOpen(true); }}
@@ -328,6 +382,7 @@ export default function ImpostazioniPage() {
           <input
             className={inputClass}
             placeholder="Cerca per nome o codice…"
+            autoComplete="nope"
             value={diamanteAc.open ? diamanteAc.query : diamanteNome}
             onFocus={() => diamanteAc.setOpen(true)}
             onChange={(e) => { diamanteAc.setQuery(e.target.value); diamanteAc.setOpen(true); }}
@@ -371,6 +426,81 @@ export default function ImpostazioniPage() {
             {n.label}
           </label>
         ))}
+      </div>
+
+      {/* Chiave AI personale */}
+      <div className={cardClass}>
+        <h2 className="font-semibold text-text-primary">Chiave AI personale</h2>
+        <p className="text-sm text-text-secondary">
+          {hasAnthropicKey
+            ? "Generazioni illimitate — chiave personale attiva."
+            : `Hai usato ${5 - (aiGenerationsRemaining ?? 0)}/5 generazioni gratuite.`}
+        </p>
+        {hasAnthropicKey ? (
+          <button
+            type="button"
+            disabled={savingKey}
+            onClick={handleRimuoviChiave}
+            className="text-sm text-text-secondary hover:text-text-primary px-4 py-2 rounded-xl border border-border transition-colors disabled:opacity-50"
+          >
+            Rimuovi chiave
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <input
+              type="password"
+              autoComplete="new-password"
+              className={inputClass}
+              placeholder="sk-ant-api03-…"
+              value={anthropicKeyInput}
+              onChange={(e) => setAnthropicKeyInput(e.target.value)}
+            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={savingKey || !anthropicKeyInput.trim()}
+                onClick={handleSalvaChiave}
+                className="bg-accent hover:bg-accent-hover text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-50"
+              >
+                Salva chiave
+              </button>
+              <a
+                href="https://console.anthropic.com/settings/keys"
+                target="_blank"
+                rel="noopener"
+                className="text-xs text-accent hover:underline"
+              >
+                Crea una chiave su console.anthropic.com
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Account */}
+      <div className={cardClass}>
+        <h2 className="font-semibold text-text-primary">Account</h2>
+        <div>
+          <label className={labelClass}>Email</label>
+          <input className={`${inputClass} opacity-60`} value={profile.email} disabled />
+          <p className="text-xs text-text-secondary mt-1">Per cambiare contatta admin.</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/auth/update-password")}
+            className="text-sm text-text-secondary hover:text-text-primary px-4 py-2 rounded-xl border border-border transition-colors"
+          >
+            Cambia password
+          </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-sm text-[#991b1b] hover:bg-[#fee2e2] px-4 py-2 rounded-xl border border-border transition-colors"
+          >
+            Esci
+          </button>
+        </div>
       </div>
 
       <button
