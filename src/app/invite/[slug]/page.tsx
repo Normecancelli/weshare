@@ -15,9 +15,17 @@ interface Sponsor {
 
 const QUALIFICA_LABEL: Record<string, string> = {
   nessuna: "Incaricato",
+  "3%": "3%",
+  "6%": "6%",
+  "9%": "9%",
+  "12%": "12%",
+  "15%": "15%",
+  "18%": "18%",
   silver: "Silver",
   gold: "Gold",
   platino: "Platino",
+  rubino: "Rubino",
+  zaffiro: "Zaffiro",
   smeraldo: "Smeraldo",
   diamante: "Diamante",
 };

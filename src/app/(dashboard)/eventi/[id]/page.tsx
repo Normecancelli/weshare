@@ -11,6 +11,7 @@ import {
   MODALITA_LABELS, MODALITA_BADGE, RSVP_LABELS, RSVP_BADGE,
 } from "@/lib/types/events";
 import { buildWaLink, buildBroadcastText } from "@/lib/events/whatsapp";
+import { EVENT_CREATOR_QUALIFICHE, HIGH_VISIBILITY_QUALIFICHE } from "@/lib/auth/roles";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("it-IT", {
@@ -50,8 +51,8 @@ export default function EventoDetailPage() {
       setEvento(e);
       const isCreator = meData.user?.id === e.creato_da;
       const isAdmin = ["topadmin", "admin"].includes(meData.ruolo);
-      const isHighQualifica = ["smeraldo", "diamante"].includes(meData.qualifica);
-      const isEventCreator = ["platino", "smeraldo", "diamante"].includes(meData.qualifica) || isAdmin;
+      const isHighQualifica = HIGH_VISIBILITY_QUALIFICHE.includes(meData.qualifica);
+      const isEventCreator = EVENT_CREATOR_QUALIFICHE.includes(meData.qualifica) || isAdmin;
       setCanManage(isCreator || isAdmin);
       setCanViewAttendeesList(isCreator || isAdmin || isHighQualifica);
       setCanSendReminderBtn(isCreator || isAdmin || isEventCreator);

@@ -12,9 +12,17 @@ const cardClass = "bg-bg-card rounded-2xl border border-divider p-5 space-y-4";
 
 const QUALIFICHE = [
   { value: "nessuna", label: "Nuovo iscritto" },
+  { value: "3%", label: "3%" },
+  { value: "6%", label: "6%" },
+  { value: "9%", label: "9%" },
+  { value: "12%", label: "12%" },
+  { value: "15%", label: "15%" },
+  { value: "18%", label: "18%" },
   { value: "silver", label: "Silver" },
   { value: "gold", label: "Gold" },
   { value: "platino", label: "Platino" },
+  { value: "rubino", label: "Rubino" },
+  { value: "zaffiro", label: "Zaffiro" },
   { value: "smeraldo", label: "Smeraldo" },
   { value: "diamante", label: "Diamante" },
 ];
@@ -327,10 +335,6 @@ export default function ImpostazioniPage() {
         <div>
           <label className={labelClass}>Codice Amway</label>
           <input className={`${inputClass} opacity-60`} value={profile.codice_amway || "—"} disabled />
-        </div>
-        <div>
-          <label className={labelClass}>Codice attività</label>
-          <input className={inputClass} value={form.codice_attivita} onChange={(e) => set("codice_attivita", e.target.value)} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>

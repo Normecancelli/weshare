@@ -1,20 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeSlug } from "@/lib/auth/slug";
+import { EVENT_CREATOR_QUALIFICHE } from "@/lib/auth/roles";
 
 type Qualifica =
   | "nessuna"
+  | "3%"
+  | "6%"
+  | "9%"
+  | "12%"
+  | "15%"
+  | "18%"
   | "silver"
   | "gold"
   | "platino"
+  | "rubino"
+  | "zaffiro"
   | "smeraldo"
   | "diamante";
 
 const QUALIFICHE: Qualifica[] = [
   "nessuna",
+  "3%",
+  "6%",
+  "9%",
+  "12%",
+  "15%",
+  "18%",
   "silver",
   "gold",
   "platino",
+  "rubino",
+  "zaffiro",
   "smeraldo",
   "diamante",
 ];
@@ -125,7 +142,7 @@ export async function POST(request: NextRequest) {
       );
     }
     if (
-      !["platino", "smeraldo", "diamante"].includes(platino.qualifica)
+      !EVENT_CREATOR_QUALIFICHE.includes(platino.qualifica)
     ) {
       return NextResponse.json(
         { error: "Il riferimento selezionato non ha qualifica platino o superiore" },

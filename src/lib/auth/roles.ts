@@ -10,15 +10,24 @@ export type UserRole =
 
 export type UserQualifica =
   | "nessuna"
+  | "3%"
+  | "6%"
+  | "9%"
+  | "12%"
+  | "15%"
+  | "18%"
   | "silver"
   | "gold"
   | "platino"
+  | "rubino"
+  | "zaffiro"
   | "smeraldo"
   | "diamante";
 
 export const ADMIN_ROLES: UserRole[] = ["topadmin", "admin"];
-export const EVENT_CREATOR_QUALIFICHE: UserQualifica[] = ["platino", "smeraldo", "diamante"];
-export const EVENT_ORGANIZER_QUALIFICHE: UserQualifica[] = ["platino", "smeraldo", "diamante"];
+export const EVENT_CREATOR_QUALIFICHE: UserQualifica[] = ["platino", "rubino", "zaffiro", "smeraldo", "diamante"];
+export const EVENT_ORGANIZER_QUALIFICHE: UserQualifica[] = ["platino", "rubino", "zaffiro", "smeraldo", "diamante"];
+export const HIGH_VISIBILITY_QUALIFICHE: UserQualifica[] = ["rubino", "zaffiro", "smeraldo", "diamante"];
 
 export function isAdminRole(ruolo: UserRole | null | undefined): boolean {
   return !!ruolo && ADMIN_ROLES.includes(ruolo);
@@ -52,7 +61,7 @@ export function canViewAttendees(
   return (
     createdBy === userId ||
     isAdminRole(ruolo) ||
-    (!!qualifica && ["smeraldo", "diamante"].includes(qualifica))
+    (!!qualifica && HIGH_VISIBILITY_QUALIFICHE.includes(qualifica))
   );
 }
 

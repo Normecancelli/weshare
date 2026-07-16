@@ -21,9 +21,17 @@ interface Platino {
 
 const QUALIFICHE = [
   { value: "nessuna", label: "Nuovo iscritto" },
+  { value: "3%", label: "3%" },
+  { value: "6%", label: "6%" },
+  { value: "9%", label: "9%" },
+  { value: "12%", label: "12%" },
+  { value: "15%", label: "15%" },
+  { value: "18%", label: "18%" },
   { value: "silver", label: "Silver" },
   { value: "gold", label: "Gold" },
   { value: "platino", label: "Platino" },
+  { value: "rubino", label: "Rubino" },
+  { value: "zaffiro", label: "Zaffiro" },
   { value: "smeraldo", label: "Smeraldo" },
   { value: "diamante", label: "Diamante" },
 ];
