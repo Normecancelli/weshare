@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAiUsage, AI_FREE_GENERATIONS_LIMIT } from "@/lib/auth/ai-limit";
 
 type Tono = "formale" | "entusiasta" | "diretto";
 
@@ -31,15 +33,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        error:
-          "Configurazione AI mancante. Contatta l'amministratore (ANTHROPIC_API_KEY non impostata).",
-      },
-      { status: 500 },
-    );
+  const admin = createAdminClient();
+  const { hasPersonalKey, generationsCount, anthropicApiKey } = await getAiUsage(admin, user.id);
+
+  let apiKey: string;
+  if (hasPersonalKey && anthropicApiKey) {
+    apiKey = anthropicApiKey;
+  } else {
+    if (generationsCount >= AI_FREE_GENERATIONS_LIMIT) {
+      return NextResponse.json(
+        {
+          error:
+            "Hai esaurito le 5 generazioni gratuite. Aggiungi la tua chiave Anthropic personale in Impostazioni per continuare.",
+        },
+        { status: 403 },
+      );
+    }
+    const globalKey = process.env.ANTHROPIC_API_KEY;
+    if (!globalKey) {
+      return NextResponse.json(
+        {
+          error:
+            "Configurazione AI mancante. Contatta l'amministratore (ANTHROPIC_API_KEY non impostata).",
+        },
+        { status: 500 },
+      );
+    }
+    apiKey = globalKey;
   }
 
   let body: { idea?: string; contesto?: Contesto };
@@ -184,6 +204,13 @@ ${contestoText}`;
       { error: "L'AI non ha restituito un risultato valido. Riprova." },
       { status: 502 },
     );
+  }
+
+  if (!hasPersonalKey) {
+    await admin
+      .from("profiles")
+      .update({ ai_generations_count: generationsCount + 1 })
+      .eq("id", user.id);
   }
 
   return NextResponse.json({ varianti: toolUseInput.varianti });
