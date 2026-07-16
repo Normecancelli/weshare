@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X, Sparkles } from "lucide-react";
 import type { Evento, EventModalita, EventVisibilita } from "@/lib/types/events";
@@ -39,6 +39,15 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
   const [coverPreview, setCoverPreview] = useState<string | null>(initial?.locandina_url || null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [showAiModal, setShowAiModal] = useState(false);
+  const [aiGenerationsRemaining, setAiGenerationsRemaining] = useState<number | null>(5);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setAiGenerationsRemaining(d.aiGenerationsRemaining ?? 0))
+      .catch(() => {});
+  }, []);
+
   const [form, setForm] = useState({
     nome: initial?.nome || "",
     descrizione: initial?.descrizione || "",
@@ -146,16 +155,18 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
       </div>
 
       {/* AI genera titolo+descrizione */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowAiModal(true)}
-          className="flex items-center gap-2 text-sm font-medium text-accent hover:underline"
-        >
-          <Sparkles size={14} strokeWidth={1.75} />
-          Genera con AI
-        </button>
-      </div>
+      {(aiGenerationsRemaining === null || aiGenerationsRemaining > 0) && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowAiModal(true)}
+            className="flex items-center gap-2 text-sm font-medium text-accent hover:underline"
+          >
+            <Sparkles size={14} strokeWidth={1.75} />
+            Genera con AI
+          </button>
+        </div>
+      )}
 
       {/* Nome */}
       <div>
