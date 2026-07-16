@@ -2,8 +2,9 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Sparkles } from "lucide-react";
 import type { Evento, EventModalita, EventVisibilita } from "@/lib/types/events";
+import { AiGenerateModal } from "./ai-generate-modal";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -37,6 +38,7 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(initial?.locandina_url || null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [showAiModal, setShowAiModal] = useState(false);
   const [form, setForm] = useState({
     nome: initial?.nome || "",
     descrizione: initial?.descrizione || "",
@@ -141,6 +143,18 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handleCoverChange(e.target.files[0])}
         />
+      </div>
+
+      {/* AI genera titolo+descrizione */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAiModal(true)}
+          className="flex items-center gap-2 text-sm font-medium text-accent hover:underline"
+        >
+          <Sparkles size={14} strokeWidth={1.75} />
+          Genera con AI
+        </button>
       </div>
 
       {/* Nome */}
@@ -270,6 +284,25 @@ export function EventForm({ initial, onSubmit, submitLabel }: EventFormProps) {
           Annulla
         </button>
       </div>
+
+      {/* Modale AI */}
+      {showAiModal && (
+        <AiGenerateModal
+          contesto={{
+            data_inizio: form.data_inizio,
+            location: form.location,
+            modalita: form.modalita,
+            prezzo: form.prezzo,
+            visibilita: form.visibilita,
+          }}
+          onApply={(nome, descrizione) => {
+            set("nome", nome);
+            set("descrizione", descrizione);
+            setShowAiModal(false);
+          }}
+          onClose={() => setShowAiModal(false)}
+        />
+      )}
     </form>
   );
 }
