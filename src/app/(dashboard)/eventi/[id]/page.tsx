@@ -114,6 +114,14 @@ export default function EventoDetailPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-5">
+      {/* Torna alla lista */}
+      <button
+        onClick={() => router.push("/eventi")}
+        className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+      >
+        ← Eventi
+      </button>
+
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-[#0B2545] text-white text-sm px-4 py-2 rounded-xl shadow-lg">
@@ -148,12 +156,14 @@ export default function EventoDetailPage() {
             <div className="flex gap-2 shrink-0">
               <button
                 onClick={() => router.push(`/eventi/${id}/modifica`)}
+                title="Modifica"
                 className="p-2 rounded-xl border border-border hover:bg-bg-section transition-colors"
               >
                 <Edit size={16} strokeWidth={1.75} className="text-text-secondary" />
               </button>
               <button
                 onClick={handleDelete}
+                title="Elimina"
                 className="p-2 rounded-xl border border-border hover:bg-[#fee2e2] transition-colors"
               >
                 <Trash2 size={16} strokeWidth={1.75} className="text-[#991b1b]" />
