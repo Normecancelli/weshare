@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { Upload } from "lucide-react";
+import { Avatar } from "@/components/avatar";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -98,6 +100,31 @@ export default function ImpostazioniPage() {
   const platinoAc = useRiferimentoAutocomplete(false);
   const diamanteAc = useRiferimentoAutocomplete(true);
 
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  async function handleAvatarUpload(file: File) {
+    setAvatarUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/profile/avatar", { method: "POST", body: fd });
+    const data = await res.json();
+    if (res.ok) {
+      setProfile((p) => (p ? { ...p, avatar_url: data.avatar_url } : p));
+      showToast("Foto aggiornata");
+    } else {
+      showToast(data.error || "Errore upload foto");
+    }
+    setAvatarUploading(false);
+  }
+
+  async function handleAvatarRemove() {
+    setAvatarUploading(true);
+    await fetch("/api/profile/avatar", { method: "DELETE" });
+    setProfile((p) => (p ? { ...p, avatar_url: null } : p));
+    setAvatarUploading(false);
+  }
+
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -177,6 +204,42 @@ export default function ImpostazioniPage() {
       )}
 
       <h1 className="text-xl font-bold text-text-primary">Impostazioni</h1>
+
+      {/* Foto profilo */}
+      <div className={cardClass}>
+        <h2 className="font-semibold text-text-primary">Foto profilo</h2>
+        <div className="flex items-center gap-4">
+          <Avatar profile={profile} size="lg" />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={avatarUploading}
+              onClick={() => avatarFileRef.current?.click()}
+              className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border border-border hover:bg-bg-section transition-colors disabled:opacity-50"
+            >
+              <Upload size={14} strokeWidth={1.75} />
+              Carica nuova foto
+            </button>
+            {profile.avatar_url && (
+              <button
+                type="button"
+                disabled={avatarUploading}
+                onClick={handleAvatarRemove}
+                className="text-sm text-text-secondary hover:text-text-primary px-4 py-2 rounded-xl border border-border transition-colors disabled:opacity-50"
+              >
+                Rimuovi
+              </button>
+            )}
+          </div>
+          <input
+            ref={avatarFileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleAvatarUpload(e.target.files[0])}
+          />
+        </div>
+      </div>
 
       {/* Dati personali */}
       <div className={cardClass}>
