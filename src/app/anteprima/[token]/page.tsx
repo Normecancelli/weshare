@@ -66,7 +66,7 @@ export default function AnteprimaPage() {
   const waMessage = `Ciao ${data.partnerNome.split(" ")[0]}, ho visto la tua pagina e sono interessato!`;
 
   return (
-    <div className="min-h-screen bg-bg-main pb-24">
+    <div className="flex-1 min-h-screen bg-bg-main pb-24 overflow-y-auto">
       <div className="bg-gradient-to-br from-accent-glow to-coral-soft p-8 text-center border-b border-divider">
         <p className="text-xs uppercase tracking-wide text-text-secondary mb-2">Ti ha invitato</p>
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center text-white text-xl font-bold mx-auto mb-3">
