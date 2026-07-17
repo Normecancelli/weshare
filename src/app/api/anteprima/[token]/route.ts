@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ICONA_TEMA_DEFAULT } from "@/lib/contenuti/icone-temi";
 
 export async function GET(
   _request: Request,
@@ -74,6 +75,21 @@ export async function GET(
       : admin.storage.from("contenuti").getPublicUrl(c.file_path || "").data.publicUrl,
   }));
 
+  const temiUsati = Array.from(
+    new Set((contenutiRaw || []).map((c) => c.tema).filter((t): t is string => !!t))
+  );
+  let temi: { tema: string; icona: string }[] = [];
+  if (temiUsati.length > 0) {
+    const { data: iconeRaw } = await admin
+      .from("temi_icone")
+      .select("tema, icona")
+      .in("tema", temiUsati);
+    const iconeMap = new Map((iconeRaw || []).map((r) => [r.tema, r.icona]));
+    temi = temiUsati
+      .sort((a, b) => a.localeCompare(b, "it"))
+      .map((t) => ({ tema: t, icona: iconeMap.get(t) || ICONA_TEMA_DEFAULT }));
+  }
+
   // Fire-and-forget: aggiorna contatore visite senza bloccare la risposta.
   admin
     .from("prospect_preview_links")
@@ -86,5 +102,6 @@ export async function GET(
     partnerTelefono: partner.telefono,
     eventi,
     contenuti,
+    temi,
   });
 }
