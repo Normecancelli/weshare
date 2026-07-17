@@ -16,6 +16,7 @@ import { buildGoogleCalendarUrl } from "@/lib/prospects/links";
 import { AppointmentFormModal } from "@/components/prospects/appointment-form-modal";
 import { MessageTemplateModal } from "@/components/prospects/message-template-modal";
 import { ConvertModal } from "@/components/prospects/convert-modal";
+import { PreviewLinkModal } from "@/components/prospects/preview-link-modal";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -49,6 +50,7 @@ export default function ContattoDetailPage() {
   const [editAppt, setEditAppt] = useState<ProspectAppointment | null>(null);
   const [msgModal, setMsgModal] = useState<"email" | "whatsapp" | null>(null);
   const [showConvert, setShowConvert] = useState(false);
+  const [showPreviewLink, setShowPreviewLink] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -157,15 +159,20 @@ export default function ContattoDetailPage() {
             </span>
           </div>
         </div>
-        {prospect.convertito_a ? (
-          <span className="text-xs font-semibold text-success">
-            ✓ Convertito a {prospect.convertito_a}
-          </span>
-        ) : (
-          <button onClick={() => setShowConvert(true)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-white hover:opacity-90 transition-all">
-            Converti
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowPreviewLink(true)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-bg-section text-text-primary hover:bg-accent-glow transition-all">
+            Link vetrina
           </button>
-        )}
+          {prospect.convertito_a ? (
+            <span className="text-xs font-semibold text-success">
+              ✓ Convertito a {prospect.convertito_a}
+            </span>
+          ) : (
+            <button onClick={() => setShowConvert(true)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-success text-white hover:opacity-90 transition-all">
+              Converti
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6">
@@ -322,6 +329,13 @@ export default function ContattoDetailPage() {
           prospect={prospect}
           onConverted={fetchAll}
           onClose={() => setShowConvert(false)}
+        />
+      )}
+
+      {showPreviewLink && (
+        <PreviewLinkModal
+          prospect={prospect}
+          onClose={() => setShowPreviewLink(false)}
         />
       )}
     </div>
