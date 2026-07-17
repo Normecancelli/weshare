@@ -40,16 +40,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const admin = createAdminClient();
   const path = `${crypto.randomUUID()}/file.${ext}`;
   const buffer = await file.arrayBuffer();
 
-  const { error: uploadError } = await admin.storage
+  const { error: uploadError } = await supabase.storage
     .from("contenuti")
     .upload(path, buffer, { contentType: file.type });
 
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
 
-  const { data: { publicUrl } } = admin.storage.from("contenuti").getPublicUrl(path);
+  const { data: { publicUrl } } = supabase.storage.from("contenuti").getPublicUrl(path);
   return NextResponse.json({ file_path: path, url: publicUrl });
 }

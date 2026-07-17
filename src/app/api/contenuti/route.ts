@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserRoleAndQualifica, canCreateEvent } from "@/lib/auth/roles";
 import type { ContenutoTipo, ContenutoMediaTipo } from "@/lib/types/contenuti";
 
-function resolveUrl(row: { media_tipo: ContenutoMediaTipo; url_esterno: string | null; file_path: string | null }) {
+function resolveUrl(
+  supabase: SupabaseClient,
+  row: { media_tipo: ContenutoMediaTipo; url_esterno: string | null; file_path: string | null }
+) {
   if (row.media_tipo === "link_esterno") return row.url_esterno || "";
-  const admin = createAdminClient();
-  const { data } = admin.storage.from("contenuti").getPublicUrl(row.file_path || "");
+  const { data } = supabase.storage.from("contenuti").getPublicUrl(row.file_path || "");
   return data.publicUrl;
 }
 
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const contenuti = (data || []).map((row) => ({ ...row, url: resolveUrl(row) }));
+  const contenuti = (data || []).map((row) => ({ ...row, url: resolveUrl(supabase, row) }));
   return NextResponse.json({ contenuti });
 }
 
@@ -79,7 +82,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ contenuto: { ...data, url: resolveUrl(data) } }, { status: 201 });
+    return NextResponse.json({ contenuto: { ...data, url: resolveUrl(supabase, data) } }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
   }
