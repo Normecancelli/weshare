@@ -35,11 +35,13 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
     path.startsWith("/invite") ||
+    path.startsWith("/anteprima") ||
     path.startsWith("/registrati") ||
     path === "/api/sponsor" ||
     path.startsWith("/api/sponsor/") ||
     path === "/api/profiles/platino-search" ||
-    path === "/api/auth/signup";
+    path === "/api/auth/signup" ||
+    path.startsWith("/api/anteprima/");
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
