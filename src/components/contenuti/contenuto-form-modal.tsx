@@ -41,7 +41,7 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
 
   useEffect(() => {
     const match = temiSuggeriti.find((t) => t.tema === tema.trim());
-    if (match) setIcona(match.icona as IconaTema);
+    setIcona(match ? (match.icona as IconaTema) : null);
   }, [tema, temiSuggeriti]);
 
   async function handleUpload(file: File) {
