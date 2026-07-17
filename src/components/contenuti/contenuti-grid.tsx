@@ -1,10 +1,11 @@
 "use client";
 
-import type { Contenuto } from "@/lib/types/contenuti";
+import type { Contenuto, TemaIcona } from "@/lib/types/contenuti";
+import { IconaTemaIcon } from "@/components/contenuti/icona-tema-icon";
 
 type Props = {
   contenuti: Contenuto[];
-  temi: string[];
+  temi: TemaIcona[];
   selectedTema: string;
   onTemaChange: (tema: string) => void;
   onOpen: (contenuto: Contenuto) => void;
@@ -14,6 +15,8 @@ type Props = {
 };
 
 export function ContenutiGrid({ contenuti, temi, selectedTema, onTemaChange, onOpen, canManage, onEdit, onDelete }: Props) {
+  const iconaPerTema = new Map(temi.map((t) => [t.tema, t.icona]));
+
   return (
     <div>
       {temi.length > 0 && (
@@ -23,7 +26,7 @@ export function ContenutiGrid({ contenuti, temi, selectedTema, onTemaChange, onO
           className="mb-4 px-3 py-2 rounded-xl text-sm border border-border bg-bg-main"
         >
           <option value="">Tutti i temi</option>
-          {temi.map((t) => <option key={t} value={t}>{t}</option>)}
+          {temi.map((t) => <option key={t.tema} value={t.tema}>{t.tema}</option>)}
         </select>
       )}
 
@@ -37,7 +40,12 @@ export function ContenutiGrid({ contenuti, temi, selectedTema, onTemaChange, onO
                 <p className="font-semibold text-sm text-text-primary mb-1">{c.titolo}</p>
                 {c.descrizione && <p className="text-xs text-text-secondary line-clamp-2 mb-2">{c.descrizione}</p>}
                 <div className="flex items-center gap-2 flex-wrap">
-                  {c.tema && <span className="text-xs px-2 py-0.5 rounded-full bg-bg-section text-text-secondary">{c.tema}</span>}
+                  {c.tema && (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-bg-section text-text-secondary">
+                      <IconaTemaIcon nome={iconaPerTema.get(c.tema) || ""} size={12} />
+                      {c.tema}
+                    </span>
+                  )}
                   <span className="text-xs px-2 py-0.5 rounded-full bg-accent-glow text-accent">{c.media_tipo === "file" ? "File" : "Link"}</span>
                 </div>
               </button>

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Contenuto, ContenutoMediaTipo, ContenutoTipo } from "@/lib/types/contenuti";
+import type { Contenuto, ContenutoMediaTipo, ContenutoTipo, TemaIcona } from "@/lib/types/contenuti";
 import { UPLOAD_LIMIT_MB } from "@/lib/types/contenuti";
 import { InlineMessage } from "@/components/ui/inline-message";
+import { ICONE_TEMA_DISPONIBILI, type IconaTema } from "@/lib/contenuti/icone-temi";
+import { IconaTemaIcon } from "@/components/contenuti/icona-tema-icon";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -20,7 +22,8 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
   const [titolo, setTitolo] = useState(contenuto?.titolo || "");
   const [descrizione, setDescrizione] = useState(contenuto?.descrizione || "");
   const [tema, setTema] = useState(contenuto?.tema || "");
-  const [temiSuggeriti, setTemiSuggeriti] = useState<string[]>([]);
+  const [temiSuggeriti, setTemiSuggeriti] = useState<TemaIcona[]>([]);
+  const [icona, setIcona] = useState<IconaTema | null>(null);
   const [mediaTipo, setMediaTipo] = useState<ContenutoMediaTipo>(contenuto?.media_tipo || "link_esterno");
   const [urlEsterno, setUrlEsterno] = useState(contenuto?.url_esterno || "");
   const [filePath, setFilePath] = useState(contenuto?.file_path || "");
@@ -35,6 +38,11 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
       .then((d) => setTemiSuggeriti(d.temi || []))
       .catch(() => {});
   }, [tipo]);
+
+  useEffect(() => {
+    const match = temiSuggeriti.find((t) => t.tema === tema.trim());
+    if (match) setIcona(match.icona as IconaTema);
+  }, [tema, temiSuggeriti]);
 
   async function handleUpload(file: File) {
     setError("");
@@ -58,8 +66,24 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
     if (!titolo.trim()) { setError("Il titolo è obbligatorio"); return; }
     if (mediaTipo === "link_esterno" && !urlEsterno.trim()) { setError("Inserisci un URL"); return; }
     if (mediaTipo === "file" && !filePath) { setError("Carica un file prima di salvare"); return; }
+    if (tema.trim() && !icona) { setError("Scegli un'icona per il tema"); return; }
 
     setSaving(true);
+
+    if (tema.trim() && icona) {
+      const iconRes = await fetch(`/api/contenuti/temi/${encodeURIComponent(tema.trim())}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ icona }),
+      });
+      if (!iconRes.ok) {
+        const d = await iconRes.json();
+        setError(d.error || "Errore durante il salvataggio dell'icona tema");
+        setSaving(false);
+        return;
+      }
+    }
+
     const body = {
       tipo, titolo, descrizione, tema, media_tipo: mediaTipo,
       url_esterno: mediaTipo === "link_esterno" ? urlEsterno : null,
@@ -112,9 +136,27 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
               className={inputClass}
             />
             <datalist id="temi-suggeriti">
-              {temiSuggeriti.map((t) => <option key={t} value={t} />)}
+              {temiSuggeriti.map((t) => <option key={t.tema} value={t.tema} />)}
             </datalist>
           </div>
+
+          {tema.trim() && (
+            <div>
+              <label className="text-xs font-semibold text-text-secondary mb-1 block">Icona tema *</label>
+              <div className="grid grid-cols-6 gap-2">
+                {ICONE_TEMA_DISPONIBILI.map((n) => (
+                  <button
+                    type="button"
+                    key={n}
+                    onClick={() => setIcona(n)}
+                    className={`aspect-square rounded-xl border flex items-center justify-center transition-all ${icona === n ? "border-accent bg-accent-glow text-accent" : "border-border text-text-secondary hover:border-accent/50"}`}
+                  >
+                    <IconaTemaIcon nome={n} size={18} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <button type="button" onClick={() => setMediaTipo("link_esterno")} className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-all ${mediaTipo === "link_esterno" ? "border-accent bg-accent-glow text-accent" : "border-border text-text-secondary"}`}>Link esterno</button>

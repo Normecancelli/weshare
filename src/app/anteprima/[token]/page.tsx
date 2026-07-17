@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Calendar, MapPin } from "lucide-react";
 import type { Evento } from "@/lib/types/events";
-import type { Contenuto } from "@/lib/types/contenuti";
+import type { Contenuto, TemaIcona } from "@/lib/types/contenuti";
 import { ContenutiGrid } from "@/components/contenuti/contenuti-grid";
 import { ContentPlayerModal } from "@/components/contenuti/content-player-modal";
 import { InlineMessage } from "@/components/ui/inline-message";
@@ -15,6 +15,7 @@ interface VetrinaData {
   partnerTelefono: string | null;
   eventi: Evento[];
   contenuti: Contenuto[];
+  temi: TemaIcona[];
 }
 
 function formatDate(iso: string) {
@@ -60,7 +61,6 @@ export default function AnteprimaPage() {
     );
   }
 
-  const temi = Array.from(new Set(data.contenuti.map((c) => c.tema).filter((t): t is string => !!t))).sort((a, b) => a.localeCompare(b, "it"));
   const contenutiFiltrati = selectedTema ? data.contenuti.filter((c) => c.tema === selectedTema) : data.contenuti;
 
   const waMessage = `Ciao ${data.partnerNome.split(" ")[0]}, ho visto la tua pagina e sono interessato!`;
@@ -103,7 +103,7 @@ export default function AnteprimaPage() {
             <h2 className="text-sm font-bold uppercase tracking-wide text-text-secondary mb-3">Formazione e presentazioni</h2>
             <ContenutiGrid
               contenuti={contenutiFiltrati}
-              temi={temi}
+              temi={data.temi}
               selectedTema={selectedTema}
               onTemaChange={setSelectedTema}
               onOpen={setPlaying}

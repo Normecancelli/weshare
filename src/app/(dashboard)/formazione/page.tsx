@@ -3,14 +3,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { GraduationCap, Plus } from "lucide-react";
 import { canCreateEvent } from "@/lib/auth/roles";
-import type { Contenuto } from "@/lib/types/contenuti";
+import type { Contenuto, TemaIcona } from "@/lib/types/contenuti";
 import { ContenutiGrid } from "@/components/contenuti/contenuti-grid";
 import { ContentPlayerModal } from "@/components/contenuti/content-player-modal";
 import { ContenutoFormModal } from "@/components/contenuti/contenuto-form-modal";
 
 export default function FormazionePage() {
   const [contenuti, setContenuti] = useState<Contenuto[]>([]);
-  const [temi, setTemi] = useState<string[]>([]);
+  const [temi, setTemi] = useState<TemaIcona[]>([]);
   const [selectedTema, setSelectedTema] = useState("");
   const [canManage, setCanManage] = useState(false);
   const [playing, setPlaying] = useState<Contenuto | null>(null);
