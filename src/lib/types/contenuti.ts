@@ -27,3 +27,8 @@ export const UPLOAD_LIMIT_MB: Record<ContenutoTipo, number> = {
   formazione: 50,
   presentazione: 15,
 };
+
+export interface TemaIcona {
+  tema: string;
+  icona: string;
+}
