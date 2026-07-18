@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { ContactQrCard } from "@/components/prospects/contact-qr-card";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -50,6 +51,7 @@ interface Profile {
   diamante_riferimento_id: string | null;
   preferenze_notifiche: Record<string, boolean>;
   avatar_url: string | null;
+  invite_url_slug: string | null;
 }
 
 function useRiferimentoAutocomplete(soloD: boolean) {
@@ -410,6 +412,12 @@ export default function ImpostazioniPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* My QrCode */}
+      <div className={cardClass}>
+        <h2 className="font-semibold text-text-primary">My QrCode</h2>
+        <ContactQrCard slug={profile.invite_url_slug || profile.codice_amway} />
       </div>
 
       {/* Notifiche email */}
