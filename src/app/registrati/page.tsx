@@ -58,6 +58,7 @@ function RegistratiInner() {
   const search = useSearchParams();
   const supabase = createClient();
   const sponsorSlug = sanitizeSlug(search.get("sponsor") || "");
+  const prospectId = search.get("prospect");
 
   const [sponsor, setSponsor] = useState<Sponsor | null>(null);
   const [sponsorLoading, setSponsorLoading] = useState(true);
@@ -106,6 +107,24 @@ function RegistratiInner() {
       .catch(() => setSponsorError("Errore caricamento sponsor. Riprova tra poco."))
       .finally(() => setSponsorLoading(false));
   }, [sponsorSlug]);
+
+  useEffect(() => {
+    if (!prospectId) return;
+    fetch(`/api/prospects/public/${encodeURIComponent(prospectId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.prospect) return;
+        const parts = (data.prospect.nome || "").trim().split(/\s+/);
+        setForm((f) => ({
+          ...f,
+          nome: f.nome || parts[0] || "",
+          cognome: f.cognome || parts.slice(1).join(" "),
+          cellulare: f.cellulare || data.prospect.telefono || "",
+          email: f.email || data.prospect.email || "",
+        }));
+      })
+      .catch(() => {});
+  }, [prospectId]);
 
   // Debounced platino search
   useEffect(() => {

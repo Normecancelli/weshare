@@ -159,9 +159,12 @@ export default function InvitePage() {
               La registrazione richiede 1 minuto.
             </p>
             <button
-              onClick={() =>
-                router.push(`/registrati?sponsor=${encodeURIComponent(sponsor.slug)}`)
-              }
+              onClick={() => {
+                const prospectId = new URLSearchParams(window.location.search).get("prospect");
+                const qp = new URLSearchParams({ sponsor: sponsor.slug });
+                if (prospectId) qp.set("prospect", prospectId);
+                router.push(`/registrati?${qp.toString()}`);
+              }}
               className="w-full py-3 rounded-xl text-sm font-semibold bg-accent text-white hover:bg-accent-hover transition-all"
             >
               Registrati ora

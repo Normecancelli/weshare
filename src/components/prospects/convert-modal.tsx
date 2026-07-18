@@ -60,7 +60,7 @@ export function ConvertModal({ prospect, onConverted, onClose }: Props) {
     const d = await res.json();
     if (res.ok) {
       const slug = d.inviteSlug;
-      setInviteUrl(slug ? `${window.location.origin}/invite/${slug}` : null);
+      setInviteUrl(slug ? `${window.location.origin}/invite/${slug}?prospect=${prospect.id}` : null);
       setMode("partner");
       onConverted();
     } else {
