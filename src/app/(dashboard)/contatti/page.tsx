@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { QrCode } from "lucide-react";
+import { ContactQrCard } from "@/components/prospects/contact-qr-card";
 import {
   type Prospect,
   type ProspectStato,
@@ -39,9 +41,15 @@ export default function ContattiPage() {
     source: "contatto_personale",
     note: "",
   });
+  const [mySlug, setMySlug] = useState<string | null>(null);
+  const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
     fetchProspects();
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => setMySlug(d.profile?.invite_url_slug || d.profile?.codice_amway || null))
+      .catch(() => {});
   }, []);
 
   async function fetchProspects() {
@@ -113,6 +121,13 @@ export default function ContattiPage() {
             className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-bg-section text-text-primary hover:bg-accent-glow transition-all"
           >
             Follow-up
+          </button>
+          <button
+            onClick={() => setShowQr(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-bg-section text-text-primary hover:bg-accent-glow transition-all"
+          >
+            <QrCode size={16} strokeWidth={2} />
+            My QrCode
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -247,6 +262,20 @@ export default function ContattiPage() {
           {prospects.length === 0
             ? "Nessun contatto. Aggiungine uno con il bottone qui sopra."
             : "Nessun contatto trovato con i filtri attivi."}
+        </div>
+      )}
+
+      {showQr && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center pt-8 md:pt-16 px-4 overflow-y-auto">
+          <div className="bg-bg-card border border-border rounded-2xl w-full max-w-md shadow-xl mb-8">
+            <div className="flex items-center justify-between p-5 border-b border-divider">
+              <h3 className="text-lg font-bold text-text-primary">My QrCode</h3>
+              <button onClick={() => setShowQr(false)} className="w-8 h-8 rounded-lg hover:bg-bg-section flex items-center justify-center text-text-secondary transition-all">✕</button>
+            </div>
+            <div className="p-5">
+              <ContactQrCard slug={mySlug} />
+            </div>
+          </div>
         </div>
       )}
     </div>

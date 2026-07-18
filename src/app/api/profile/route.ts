@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAiUsage, getAiGenerationsRemaining } from "@/lib/auth/ai-limit";
 
 const PROFILE_FIELDS =
-  "id, nome, email, telefono, indirizzo, cap, citta, codice_amway, codice_attivita, qualifica, data_ingresso, platino_riferimento_id, diamante_riferimento_id, preferenze_notifiche, avatar_url";
+  "id, nome, email, telefono, indirizzo, cap, citta, codice_amway, codice_attivita, qualifica, data_ingresso, platino_riferimento_id, diamante_riferimento_id, preferenze_notifiche, avatar_url, invite_url_slug";
 
 export async function GET() {
   const supabase = await createClient();
