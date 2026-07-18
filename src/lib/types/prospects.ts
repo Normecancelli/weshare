@@ -5,7 +5,8 @@ export type ProspectSource =
   | "lista"
   | "social"
   | "referenza"
-  | "altro";
+  | "altro"
+  | "qr_link";
 
 export type ProspectStato =
   | "nuovo_contatto"
@@ -51,6 +52,7 @@ export const SOURCE_LABELS: Record<ProspectSource, string> = {
   social: "Social",
   referenza: "Referenza",
   altro: "Altro",
+  qr_link: "QR / Link contatti",
 };
 
 export const STATO_LABELS: Record<ProspectStato, string> = {
