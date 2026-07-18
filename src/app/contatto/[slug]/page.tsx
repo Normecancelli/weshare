@@ -54,16 +54,21 @@ export default function ContattoLandingPage() {
     }
     setSubmitting(true);
     setSubmitError("");
-    const res = await fetch(`/api/contatto/${encodeURIComponent(cleanSlug)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    if (res.ok && data.url) {
-      router.push(data.url);
-    } else {
-      setSubmitError(data.error || "Errore durante l'invio, riprova.");
+    try {
+      const res = await fetch(`/api/contatto/${encodeURIComponent(cleanSlug)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        router.push(data.url);
+      } else {
+        setSubmitError(data.error || "Errore durante l'invio, riprova.");
+        setSubmitting(false);
+      }
+    } catch (error) {
+      setSubmitError("Errore di rete, riprova.");
       setSubmitting(false);
     }
   }
