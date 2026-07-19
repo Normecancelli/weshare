@@ -23,6 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import packageJson from "../../package.json";
 
 type MenuItem = {
   name: string;
@@ -203,6 +204,9 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
             <LogOut size={18} strokeWidth={1.75} className="shrink-0" />
             {loggingOut ? "Uscita..." : "Esci"}
           </button>
+          <div className="px-3 pt-1 text-[10px] text-white/30">
+            v{packageJson.version}
+          </div>
         </div>
       </nav>
     </>
