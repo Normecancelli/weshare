@@ -17,26 +17,28 @@ async function findExistingProspectId(
   partnerId: string,
   telefono: string,
   email: string
-): Promise<string | null> {
+): Promise<{ id: string | null } | { error: string }> {
   if (telefono) {
-    const { data } = await admin
+    const { data, error } = await admin
       .from("prospects")
       .select("id")
       .eq("partner_id", partnerId)
       .eq("telefono", telefono)
       .maybeSingle();
-    if (data) return data.id;
+    if (error) return { error: error.message };
+    if (data) return { id: data.id };
   }
   if (email) {
-    const { data } = await admin
+    const { data, error } = await admin
       .from("prospects")
       .select("id")
       .eq("partner_id", partnerId)
       .eq("email", email)
       .maybeSingle();
-    if (data) return data.id;
+    if (error) return { error: error.message };
+    if (data) return { id: data.id };
   }
-  return null;
+  return { id: null };
 }
 
 export async function POST(
@@ -74,19 +76,39 @@ export async function POST(
 
   const admin = createAdminClient();
 
-  const { data: partner } = await admin
+  const { data: partner, error: partnerErr } = await admin
     .from("profiles")
     .select("id")
     .ilike("invite_url_slug", safeSlug)
     .limit(1)
     .maybeSingle();
 
+  if (partnerErr) {
+    console.error("[api/contatto] Supabase error (partner lookup)", {
+      slug: safeSlug,
+      error: partnerErr,
+    });
+    return NextResponse.json(
+      { error: "Errore durante la verifica del link. Riprova tra poco." },
+      { status: 500 }
+    );
+  }
   if (!partner) {
     return NextResponse.json({ error: "Link non valido" }, { status: 404 });
   }
 
   const nomeCompleto = [nome, cognome].filter(Boolean).join(" ");
-  const existingId = await findExistingProspectId(admin, partner.id, telefono, email);
+  const dedupResult = await findExistingProspectId(admin, partner.id, telefono, email);
+
+  if ("error" in dedupResult) {
+    console.error("[api/contatto] Supabase error (dedup lookup)", {
+      slug: safeSlug,
+      error: dedupResult.error,
+    });
+    return NextResponse.json({ error: "Errore durante il salvataggio" }, { status: 500 });
+  }
+
+  const existingId = dedupResult.id;
 
   let prospectId: string;
 
@@ -95,8 +117,8 @@ export async function POST(
       .from("prospects")
       .update({
         nome: nomeCompleto,
-        telefono: telefono || null,
-        email: email || null,
+        ...(telefono ? { telefono } : {}),
+        ...(email ? { email } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", existingId)
