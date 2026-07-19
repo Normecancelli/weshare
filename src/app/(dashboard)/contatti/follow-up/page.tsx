@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   type Prospect,
   type FollowUpFlag,
@@ -12,6 +13,7 @@ import { MessageTemplateModal } from "@/components/prospects/message-template-mo
 const FLAGS: FollowUpFlag[] = ["da_valutare", "inviare", "non_inviare", "sospeso"];
 
 export default function FollowUpPage() {
+  const router = useRouter();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [msgTarget, setMsgTarget] = useState<{ p: Prospect; tipo: "email" | "whatsapp" } | null>(null);
@@ -50,6 +52,10 @@ export default function FollowUpPage() {
 
   return (
     <div>
+      <button onClick={() => router.push("/contatti")} className="text-sm text-text-secondary hover:text-text-primary mb-4 transition-colors">
+        ← Contatti
+      </button>
+
       <div className="mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Follow-up</h2>
         <p className="text-text-secondary text-sm mt-1">
