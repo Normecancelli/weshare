@@ -12,7 +12,7 @@ Il bottone "Ricevuta" è visibile su **qualsiasi ordine**, indipendentemente dal
 - **Contenuto ricevuta**: replica il modulo Amway fornito, ma **senza** la sezione P.IVA/Codice SDI/Pec ("Merce da fatturare a") — i clienti in anagrafica hanno solo nome/cognome/indirizzo/città/telefono, nessun dato business. **Senza** VP e provvigioni. **Senza** le righe Subtotale/Spese di contrassegno/Spese di trasporto (non tracciati oggi in `client_orders`) — un solo importo, "Totale da pagare" = `order.totale_cliente`.
 - **Numero ricevuta**: prime 8 caratteri (maiuscolo) dell'`id` dell'ordine esistente — nessuna nuova colonna, nessun contatore da gestire in concorrenza.
 - **Data**: `order.created_at` (data di creazione dell'ordine), formattata `it-IT`.
-- **Dati "Il vostro imprenditore Amway"**: nome, `codice_amway`, telefono del partner proprietario dell'ordine (`profiles` via `order.partner_id`).
+- **Dati "Il vostro Partner Amway"**: nome, `codice_amway`, telefono del partner proprietario dell'ordine (`profiles` via `order.partner_id`).
 - **Email**: invio reale via Resend (già configurato per i reminder eventi, stesso mittente `WeShare <noreply@growset.it>`), PDF allegato. Richiede che il cliente abbia un'email in anagrafica — altrimenti errore esplicito, nessun invio silenzioso. Dipende dalla env var `RESEND_API_KEY` su Vercel (stessa dipendenza già presente per i reminder — se non impostata, l'invio fallirà con errore chiaro, non è una nuova lacuna introdotta da questa feature).
 - **WhatsApp**: nessun invio automatico (coerente con la decisione già presa nel progetto di evitare OpenWA/invio automatico per rischio ban). Un bottone scarica il PDF, un altro apre `wa.me` con testo precompilato — l'utente allega il file scaricato a mano nella chat.
 - **Bottone "Scarica PDF"**: download diretto, nessun invio.
@@ -25,7 +25,7 @@ Il bottone "Ricevuta" è visibile su **qualsiasi ordine**, indipendentemente dal
 
 ## Modulo condiviso
 
-`src/lib/receipts/pdf.tsx` — esporta `buildReceiptPdfBuffer(order: ClientOrder, partner: { nome: string; codice_amway: string | null; telefono: string | null }): Promise<Buffer>`, il componente `@react-pdf/renderer` (Document/Page/View/Text) che replica il layout del modulo Amway (header, box cliente, tabella articoli, totale, riga firma, footer imprenditore). Usato da entrambe le route API, nessuna duplicazione del layout.
+`src/lib/receipts/pdf.tsx` — esporta `buildReceiptPdfBuffer(order: ClientOrder, partner: { nome: string; codice_amway: string | null; telefono: string | null }): Promise<Buffer>`, il componente `@react-pdf/renderer` (Document/Page/View/Text) che replica il layout del modulo Amway (header, box cliente, tabella articoli, totale, riga firma, footer "IL VOSTRO PARTNER AMWAY"). Usato da entrambe le route API, nessuna duplicazione del layout.
 
 ## UI
 
