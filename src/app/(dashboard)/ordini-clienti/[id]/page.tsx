@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { TrashIcon } from "@/components/icons";
 import { WhatsAppExtractor } from "@/components/whatsapp-extractor";
 import { ProductSearch } from "@/components/ui/product-search";
+import { InlineMessage } from "@/components/ui/inline-message";
 import type { OrderItem, Product } from "@/lib/types/orders";
 import type { ClientOrder, OrderChannel } from "@/lib/types/orders";
 
@@ -38,6 +39,8 @@ export default function OrdineDetailPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [addingProduct, setAddingProduct] = useState(false);
   const [vpWarning, setVpWarning] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [receiptMessage, setReceiptMessage] = useState<{ variant: "success" | "error"; text: string } | null>(null);
 
   const fetchOrder = useCallback(async () => {
     setLoading(true);
@@ -145,6 +148,36 @@ export default function OrdineDetailPage() {
       setError(data.error || "Errore eliminazione");
       setDeleting(false);
     }
+  }
+
+  async function handleSendEmail() {
+    setSendingEmail(true);
+    setReceiptMessage(null);
+    try {
+      const res = await fetch(`/api/client-orders/${id}/receipt/send-email`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setReceiptMessage({ variant: "success", text: "Email inviata con la ricevuta in allegato." });
+      } else {
+        setReceiptMessage({ variant: "error", text: data.error || "Errore durante l'invio dell'email" });
+      }
+    } catch {
+      setReceiptMessage({ variant: "error", text: "Errore di rete, riprova." });
+    }
+    setSendingEmail(false);
+  }
+
+  function handleWhatsappClick() {
+    if (!order?.customer?.telefono) {
+      setReceiptMessage({ variant: "error", text: "Cliente senza numero di telefono" });
+      return;
+    }
+    window.open(`/api/client-orders/${id}/receipt`, "_blank");
+    const phone = order.customer.telefono.replace(/\s+/g, "").replace(/^\+/, "");
+    const text = encodeURIComponent(
+      `Ciao ${order.customer.nome}! Ti invio in allegato la ricevuta del tuo ordine.`
+    );
+    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
   }
 
   function formatDate(d: string) {
@@ -405,6 +438,39 @@ export default function OrdineDetailPage() {
           placeholder="Note sull'ordine..."
           className="w-full px-3 py-2 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent resize-none disabled:opacity-60"
         />
+      </section>
+
+      {/* Ricevuta */}
+      <section className="bg-bg-card border border-border rounded-2xl p-5 mb-4">
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Ricevuta</div>
+        {receiptMessage && (
+          <div className="mb-3">
+            <InlineMessage variant={receiptMessage.variant}>{receiptMessage.text}</InlineMessage>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={`/api/client-orders/${id}/receipt`}
+            className="px-4 py-2 rounded-xl text-sm font-semibold border border-border text-text-primary hover:bg-bg-section transition-all"
+          >
+            Scarica PDF
+          </a>
+          <button
+            type="button"
+            onClick={handleSendEmail}
+            disabled={sendingEmail}
+            className="px-4 py-2 rounded-xl text-sm font-semibold border border-border text-text-primary hover:bg-bg-section transition-all disabled:opacity-50"
+          >
+            {sendingEmail ? "Invio..." : "Invia email"}
+          </button>
+          <button
+            type="button"
+            onClick={handleWhatsappClick}
+            className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#25D366] text-white hover:opacity-90 transition-all"
+          >
+            WhatsApp
+          </button>
+        </div>
       </section>
 
       {/* Azioni */}

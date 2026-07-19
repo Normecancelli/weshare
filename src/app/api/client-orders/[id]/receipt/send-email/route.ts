@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { buildReceiptPdfBuffer, receiptNumber } from "@/lib/receipts/pdf";
 
 export async function POST(
@@ -33,7 +34,8 @@ export async function POST(
     .select("*, product:products(id, codice_amway, descrizione, contenuto, categoria)")
     .eq("order_id", id);
 
-  const { data: profile } = await supabase
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("nome, codice_amway, telefono")
     .eq("id", user.id)
@@ -48,20 +50,31 @@ export async function POST(
     }
   );
 
-  const receiptId = receiptNumber(id);
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  const { error: sendError } = await resend.emails.send({
-    from: "WeShare <noreply@growset.it>",
-    to: order.customer.email,
-    subject: `La tua ricevuta d'ordine N. ${receiptId}`,
-    html: `<p>Ciao ${order.customer.nome},</p><p>in allegato trovi la ricevuta del tuo ordine.</p><p>Grazie!</p>`,
-    attachments: [{ filename: `ricevuta-${receiptId}.pdf`, content: pdfBuffer }],
-  });
-
-  if (sendError) {
-    return NextResponse.json({ error: sendError.message }, { status: 500 });
+  if (!process.env.RESEND_API_KEY) {
+    return NextResponse.json(
+      { error: "Invio email non configurato (manca RESEND_API_KEY)" },
+      { status: 500 }
+    );
   }
 
-  return NextResponse.json({ sent: true });
+  const receiptId = receiptNumber(id);
+
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { error: sendError } = await resend.emails.send({
+      from: "WeShare <noreply@growset.it>",
+      to: order.customer.email,
+      subject: `La tua ricevuta d'ordine N. ${receiptId}`,
+      html: `<p>Ciao ${order.customer.nome},</p><p>in allegato trovi la ricevuta del tuo ordine.</p><p>Grazie!</p>`,
+      attachments: [{ filename: `ricevuta-${receiptId}.pdf`, content: pdfBuffer }],
+    });
+
+    if (sendError) {
+      return NextResponse.json({ error: sendError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ sent: true });
+  } catch {
+    return NextResponse.json({ error: "Errore durante l'invio dell'email" }, { status: 500 });
+  }
 }

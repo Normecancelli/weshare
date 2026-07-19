@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { buildReceiptPdfBuffer, receiptNumber } from "@/lib/receipts/pdf";
 
 export async function GET(
@@ -28,7 +29,8 @@ export async function GET(
     .select("*, product:products(id, codice_amway, descrizione, contenuto, categoria)")
     .eq("order_id", id);
 
-  const { data: profile } = await supabase
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("nome, codice_amway, telefono")
     .eq("id", user.id)
