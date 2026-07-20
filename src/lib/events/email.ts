@@ -96,3 +96,59 @@ export function buildReminderEmail(
 
   return { subject, html };
 }
+
+export function buildBookingConfirmationEmail(
+  evento: Evento,
+  nome: string,
+  stato: "confermato" | "in_attesa"
+): { subject: string; html: string } {
+  const subject = stato === "confermato"
+    ? `Prenotazione confermata: ${evento.nome}`
+    : `In lista d'attesa: ${evento.nome}`;
+
+  const statoMsg = stato === "confermato"
+    ? "La tua prenotazione è confermata!"
+    : "Sei in lista d'attesa: ti contatteremo se si libera un posto.";
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F0F4F8;font-family:system-ui,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:24px 16px">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
+          <tr>
+            <td style="background:#0B2545;padding:24px 32px;border-radius:12px 12px 0 0">
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700">WeShare</h1>
+              <p style="margin:4px 0 0;color:rgba(255,255,255,0.6);font-size:12px">powered by Me.To.Do for you®</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff;padding:32px;border-radius:0 0 12px 12px">
+              <p style="margin:0 0 16px;color:#0B2545;font-size:16px">Ciao <strong>${nome}</strong>,</p>
+              <p style="margin:0 0 16px;color:#0B2545;font-size:15px">${statoMsg}</p>
+              <h2 style="margin:0 0 16px;color:#0B2545;font-size:20px">${evento.nome}</h2>
+              <table cellpadding="0" cellspacing="0" style="margin-bottom:8px">
+                <tr><td style="padding:4px 0;color:#4A6480;font-size:14px">📅</td><td style="padding:4px 8px;color:#0B2545;font-size:14px"><strong>${formatDate(evento.data_inizio)}</strong> alle <strong>${formatTime(evento.data_inizio)}</strong></td></tr>
+                ${evento.location ? `<tr><td style="padding:4px 0;color:#4A6480;font-size:14px">📍</td><td style="padding:4px 8px;color:#0B2545;font-size:14px">${evento.location}</td></tr>` : ""}
+                ${evento.link_evento ? `<tr><td style="padding:4px 0;color:#4A6480;font-size:14px">🔗</td><td style="padding:4px 8px"><a href="${evento.link_evento}" style="color:#1D6FA4">Collegamento evento</a></td></tr>` : ""}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 0;text-align:center;color:#6B8099;font-size:12px">
+              WeShare · powered by Me.To.Do for you® · <a href="https://weshare.growset.it" style="color:#1D6FA4">weshare.growset.it</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+  return { subject, html };
+}
