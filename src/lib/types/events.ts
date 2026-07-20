@@ -69,3 +69,35 @@ export const VISIBILITA_LABELS: Record<EventVisibilita, string> = {
   globale: "Tutti",
   gruppo: "Il mio gruppo",
 };
+
+export type BookingStato = "confermato" | "in_attesa" | "annullato";
+
+export interface EventProspectBooking {
+  id: string;
+  event_id: string;
+  prospect_id: string;
+  stato: BookingStato;
+  created_at: string;
+}
+
+export interface AttendeeRow {
+  tipo: "partner" | "prospect";
+  id: string;
+  nome: string;
+  email: string | null;
+  telefono: string | null;
+  stato: RsvpStato | BookingStato;
+  partnerNome?: string;
+}
+
+export const BOOKING_BADGE: Record<BookingStato, string> = {
+  confermato: "bg-[#dcfce7] text-[#166534]",
+  in_attesa: "bg-[#fef9c3] text-[#854d0e]",
+  annullato: "bg-[#fee2e2] text-[#991b1b]",
+};
+
+export const BOOKING_LABELS: Record<BookingStato, string> = {
+  confermato: "Confermato",
+  in_attesa: "In lista d'attesa",
+  annullato: "Annullato",
+};
