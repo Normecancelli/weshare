@@ -125,7 +125,7 @@ export async function POST(
   if (email) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const { subject, html } = buildBookingConfirmationEmail(evento as Evento, nomeCompleto, bookingResult.stato);
-    await resend.emails.send({
+    resend.emails.send({
       from: "WeShare <noreply@growset.it>",
       to: email,
       subject,
