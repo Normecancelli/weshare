@@ -22,7 +22,7 @@ Reminder 24h/2h e inclusione dei prospect nel sistema di reminder esistente sono
 - **Lista iscritti organizzatore**: chi già vede la lista (organizzatore/admin/qualifica alta, gate `canViewAttendeesList` esistente) vede TUTTI gli iscritti — partner + prospect uniti — con badge "in lista d'attesa" per gli stati `in_attesa`, e per ogni riga prospect il **nome del partner di riferimento** (`prospects.partner_id → profiles.nome`). Nessun filtro per-partner: chi vede la lista la vede intera, come già oggi per gli iscritti partner.
 - **Anti-abuso**: stesso pattern honeypot + validazione minima già usato in `/api/contatto/[slug]`, nessun rate-limiting dedicato (link condiviso a mano/QR, non endpoint esposto a scraping).
 
-## Data model — migration `018_prenotazione_eventi.sql`
+## Data model — migration `019_prenotazione_eventi.sql`
 
 ```sql
 CREATE TABLE public.event_booking_links (
