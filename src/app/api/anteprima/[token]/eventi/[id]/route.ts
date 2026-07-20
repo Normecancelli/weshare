@@ -114,6 +114,10 @@ export async function POST(
   }
   const { evento, prospectId } = resolved;
 
+  if (new Date(evento.data_inizio) < new Date()) {
+    return NextResponse.json({ error: "Questo evento è già passato" }, { status: 410 });
+  }
+
   let body: PrenotaBody;
   try {
     body = await request.json();

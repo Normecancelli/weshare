@@ -104,6 +104,9 @@ export async function POST(
   const { data: evento } = await admin
     .from("events").select("*").eq("id", link.event_id).single();
   if (!evento) return NextResponse.json({ error: "Evento non trovato" }, { status: 404 });
+  if (new Date(evento.data_inizio) < new Date()) {
+    return NextResponse.json({ error: "Questo evento è già passato" }, { status: 410 });
+  }
 
   const nomeCompleto = [nome, cognome].filter(Boolean).join(" ");
 
