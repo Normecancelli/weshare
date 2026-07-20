@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeSlug } from "@/lib/auth/slug";
 import { upsertPreviewLink } from "@/lib/prospects/preview-link";
+import { findOrCreateProspect } from "@/lib/prospects/find-or-create";
 
 interface ContattoBody {
   nome?: string;
@@ -10,35 +10,6 @@ interface ContattoBody {
   telefono?: string;
   email?: string;
   website?: string; // honeypot: deve restare vuoto
-}
-
-async function findExistingProspectId(
-  admin: SupabaseClient,
-  partnerId: string,
-  telefono: string,
-  email: string
-): Promise<{ id: string | null } | { error: string }> {
-  if (telefono) {
-    const { data, error } = await admin
-      .from("prospects")
-      .select("id")
-      .eq("partner_id", partnerId)
-      .eq("telefono", telefono)
-      .maybeSingle();
-    if (error) return { error: error.message };
-    if (data) return { id: data.id };
-  }
-  if (email) {
-    const { data, error } = await admin
-      .from("prospects")
-      .select("id")
-      .eq("partner_id", partnerId)
-      .eq("email", email)
-      .maybeSingle();
-    if (error) return { error: error.message };
-    if (data) return { id: data.id };
-  }
-  return { id: null };
 }
 
 export async function POST(
@@ -98,58 +69,23 @@ export async function POST(
   }
 
   const nomeCompleto = [nome, cognome].filter(Boolean).join(" ");
-  const dedupResult = await findExistingProspectId(admin, partner.id, telefono, email);
 
-  if ("error" in dedupResult) {
-    console.error("[api/contatto] Supabase error (dedup lookup)", {
+  const prospectResult = await findOrCreateProspect(admin, partner.id, {
+    nome: nomeCompleto,
+    telefono,
+    email,
+    source: "qr_link",
+  });
+
+  if ("error" in prospectResult) {
+    console.error("[api/contatto] Supabase error (find-or-create)", {
       slug: safeSlug,
-      error: dedupResult.error,
+      error: prospectResult.error,
     });
     return NextResponse.json({ error: "Errore durante il salvataggio" }, { status: 500 });
   }
 
-  const existingId = dedupResult.id;
-
-  let prospectId: string;
-
-  if (existingId) {
-    const { data: updated, error: updErr } = await admin
-      .from("prospects")
-      .update({
-        nome: nomeCompleto,
-        ...(telefono ? { telefono } : {}),
-        ...(email ? { email } : {}),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existingId)
-      .select("id")
-      .single();
-
-    if (updErr || !updated) {
-      return NextResponse.json({ error: "Errore durante il salvataggio" }, { status: 500 });
-    }
-    prospectId = updated.id;
-  } else {
-    const { data: created, error: insErr } = await admin
-      .from("prospects")
-      .insert({
-        partner_id: partner.id,
-        nome: nomeCompleto,
-        telefono: telefono || null,
-        email: email || null,
-        source: "qr_link",
-        stato: "nuovo_contatto",
-      })
-      .select("id")
-      .single();
-
-    if (insErr || !created) {
-      return NextResponse.json({ error: "Errore durante il salvataggio" }, { status: 500 });
-    }
-    prospectId = created.id;
-  }
-
-  const linkResult = await upsertPreviewLink(admin, prospectId);
+  const linkResult = await upsertPreviewLink(admin, prospectResult.id);
   if ("error" in linkResult) {
     return NextResponse.json({ error: linkResult.error }, { status: 500 });
   }
