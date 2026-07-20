@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Calendar, MapPin } from "lucide-react";
 import type { Evento } from "@/lib/types/events";
 import type { Contenuto, TemaIcona } from "@/lib/types/contenuti";
@@ -92,6 +93,12 @@ export default function AnteprimaPage() {
                       <MapPin size={12} strokeWidth={1.75} /> {e.location}
                     </p>
                   )}
+                  <Link
+                    href={`/anteprima/${token}/eventi/${e.id}`}
+                    className="mt-2 inline-block text-xs font-semibold text-accent hover:underline"
+                  >
+                    Prenota il tuo posto →
+                  </Link>
                 </div>
               ))}
             </div>
