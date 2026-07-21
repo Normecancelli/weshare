@@ -336,12 +336,19 @@ git commit -m "feat(reminder): bottone manuale include prospect confermati"
 
 ## Task 4: Trigger GitHub Actions + rimozione cron Vercel
 
+**Scoperta durante il Task 2** (non prevista nello spec originale): il middleware globale (`src/lib/supabase/middleware.ts`) reindirizza a `/login` qualsiasi richiesta non autenticata (nessun cookie di sessione) verso path non in whitelist — e `/api/cron/event-reminders` non c'è mai stato. Questo blocca QUALSIASI chiamata esterna (curl, GitHub Actions, e verosimilmente anche il vecchio cron nativo Vercel) prima ancora che la route arrivi a controllare `CRON_SECRET`. La route ha già la propria autenticazione via secret — il fix è aggiungerla alla whitelist del middleware, stesso trattamento già riservato ad altri endpoint con auth propria (`/api/sponsor/`, `/api/anteprima/`, ecc.).
+
 **Files:**
 - Create: `.github/workflows/event-reminders.yml`
 - Modify: `vercel.json`
+- Modify: `src/lib/supabase/middleware.ts`
 
 **Interfaces:**
 - Consumes: `GET /api/cron/event-reminders` (Task 2), secret repo GitHub `CRON_SECRET`
+
+- [ ] **Step 0: Aggiungi `/api/cron/` alla whitelist del middleware**
+
+In `src/lib/supabase/middleware.ts`, nel blocco `isPublicPath`, aggiungi la riga `path.startsWith("/api/cron/") ||` (in qualsiasi punto della catena di `||`, coerente con lo stile esistente). La route resta comunque protetta dal proprio controllo `Authorization: Bearer CRON_SECRET` — questa modifica toglie solo il redirect di sessione che la precede, non riduce la sicurezza.
 
 - [ ] **Step 1: Crea il workflow**
 
@@ -386,7 +393,7 @@ Run: `gh workflow list --repo Normecancelli/weshare` (dopo il push, il workflow 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add .github/workflows/event-reminders.yml vercel.json
+git add .github/workflows/event-reminders.yml vercel.json src/lib/supabase/middleware.ts
 git commit -m "feat(reminder): trigger GitHub Actions ogni 15 minuti, rimuove cron nativo Vercel"
 ```
 
