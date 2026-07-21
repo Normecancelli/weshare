@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserRoleAndQualifica, canSendReminder } from "@/lib/auth/roles";
 import { buildReminderEmail } from "@/lib/events/email";
+import { getConfirmedRecipients } from "@/lib/events/prenotazione";
 import type { Evento } from "@/lib/types/events";
 
 export async function POST(
@@ -31,22 +32,15 @@ export async function POST(
     .from("system_flags").select("value").eq("flag_name", "email_reminder_template").single();
   const globalTemplate = flagData?.value as string | null;
 
-  const { data: attendees } = await admin
-    .from("event_attendees")
-    .select("*, profile:profiles!user_id(nome, email)")
-    .eq("event_id", id)
-    .eq("stato", "confermato");
-
-  if (!attendees?.length) return NextResponse.json({ sent: 0 });
+  const recipients = await getConfirmedRecipients(admin, id);
+  if (!recipients.length) return NextResponse.json({ sent: 0 });
 
   let sent = 0;
-  for (const a of attendees) {
-    const profile = a.profile as { nome: string; email: string } | null;
-    if (!profile?.email) continue;
-    const { subject, html } = buildReminderEmail(evento as Evento, profile.nome, 1, globalTemplate);
+  for (const r of recipients) {
+    const { subject, html } = buildReminderEmail(evento as Evento, r.nome, "1d", globalTemplate);
     const { error } = await resend.emails.send({
       from: "WeShare <noreply@growset.it>",
-      to: profile.email,
+      to: r.email,
       subject,
       html,
     });

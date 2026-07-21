@@ -28,7 +28,7 @@ export async function GET(
   const { subject, html } = buildReminderEmail(
     evento as Evento,
     (profile as { nome: string } | null)?.nome || "Partner",
-    1,
+    "1d",
     globalTemplate
   );
 
