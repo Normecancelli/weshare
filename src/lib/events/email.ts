@@ -48,6 +48,15 @@ export const DEFAULT_EMAIL_TEMPLATE = `
 </html>
 `;
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("it-IT", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
@@ -127,7 +136,7 @@ export function buildBookingConfirmationEmail(
           </tr>
           <tr>
             <td style="background:#ffffff;padding:32px;border-radius:0 0 12px 12px">
-              <p style="margin:0 0 16px;color:#0B2545;font-size:16px">Ciao <strong>${nome}</strong>,</p>
+              <p style="margin:0 0 16px;color:#0B2545;font-size:16px">Ciao <strong>${escapeHtml(nome)}</strong>,</p>
               <p style="margin:0 0 16px;color:#0B2545;font-size:15px">${statoMsg}</p>
               <h2 style="margin:0 0 16px;color:#0B2545;font-size:20px">${evento.nome}</h2>
               <table cellpadding="0" cellspacing="0" style="margin-bottom:8px">

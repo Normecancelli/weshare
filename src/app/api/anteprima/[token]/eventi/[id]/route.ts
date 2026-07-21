@@ -99,6 +99,7 @@ interface PrenotaBody {
   nome?: string;
   telefono?: string;
   email?: string;
+  website?: string;
 }
 
 export async function POST(
@@ -123,6 +124,10 @@ export async function POST(
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
+  }
+
+  if (body.website && body.website.trim()) {
+    return NextResponse.json({ stato: "confermato" });
   }
 
   const nome = (body.nome || "").trim();
