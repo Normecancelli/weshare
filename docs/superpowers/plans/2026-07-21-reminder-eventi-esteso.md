@@ -341,14 +341,11 @@ git commit -m "feat(reminder): bottone manuale include prospect confermati"
 **Files:**
 - Create: `.github/workflows/event-reminders.yml`
 - Modify: `vercel.json`
-- Modify: `src/lib/supabase/middleware.ts`
 
 **Interfaces:**
 - Consumes: `GET /api/cron/event-reminders` (Task 2), secret repo GitHub `CRON_SECRET`
 
-- [ ] **Step 0: Aggiungi `/api/cron/` alla whitelist del middleware**
-
-In `src/lib/supabase/middleware.ts`, nel blocco `isPublicPath`, aggiungi la riga `path.startsWith("/api/cron/") ||` (in qualsiasi punto della catena di `||`, coerente con lo stile esistente). La route resta comunque protetta dal proprio controllo `Authorization: Bearer CRON_SECRET` — questa modifica toglie solo il redirect di sessione che la precede, non riduce la sicurezza.
+- [x] **Step 0: Aggiungi `/api/cron/` alla whitelist del middleware** — **GIÀ FATTO nel Task 2** (commit `9574b9b`), applicato dal subagent per poter testare dal vivo la propria fix di logging. Verificato: `src/lib/supabase/middleware.ts` include ora `path.startsWith("/api/cron/")` in `isPublicPath`. Nessuna azione da ripetere qui.
 
 - [ ] **Step 1: Crea il workflow**
 
@@ -393,7 +390,7 @@ Run: `gh workflow list --repo Normecancelli/weshare` (dopo il push, il workflow 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add .github/workflows/event-reminders.yml vercel.json src/lib/supabase/middleware.ts
+git add .github/workflows/event-reminders.yml vercel.json
 git commit -m "feat(reminder): trigger GitHub Actions ogni 15 minuti, rimuove cron nativo Vercel"
 ```
 
