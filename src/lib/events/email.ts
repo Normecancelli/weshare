@@ -80,16 +80,20 @@ function applyTemplate(template: string, vars: Record<string, string | null | un
   return result;
 }
 
+export type ReminderTier = "7d" | "1d" | "2h";
+
 export function buildReminderEmail(
   evento: Evento,
   attendeeName: string,
-  daysAhead: 1 | 7,
+  tier: ReminderTier,
   globalTemplate?: string | null
 ): { subject: string; html: string } {
   const template = globalTemplate || DEFAULT_EMAIL_TEMPLATE;
-  const subject = daysAhead === 7
-    ? `${evento.nome} è tra 7 giorni!`
-    : `Reminder: ${evento.nome} è domani!`;
+  const subject = {
+    "7d": `${evento.nome} è tra 7 giorni!`,
+    "1d": `Reminder: ${evento.nome} è domani!`,
+    "2h": `${evento.nome} inizia tra poche ore!`,
+  }[tier];
 
   const html = applyTemplate(template, {
     nome: attendeeName,
