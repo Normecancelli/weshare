@@ -99,10 +99,19 @@ export default function EventoDetailPage() {
 
   async function handleGenerateBookingLink() {
     setGeneratingLink(true);
-    const res = await fetch(`/api/events/${id}/booking-link`, { method: "POST" });
-    const data = await res.json();
-    if (res.ok) setBookingLinkUrl(data.url);
-    setGeneratingLink(false);
+    try {
+      const res = await fetch(`/api/events/${id}/booking-link`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setBookingLinkUrl(data.url);
+      } else {
+        showToast(data.error || "Errore durante la generazione del link");
+      }
+    } catch {
+      showToast("Errore di rete, riprova.");
+    } finally {
+      setGeneratingLink(false);
+    }
   }
 
   async function handleSendReminder() {
