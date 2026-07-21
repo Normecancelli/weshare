@@ -4,14 +4,16 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Calendar, MapPin, ExternalLink, Users, Edit, Trash2,
-  MessageCircle, Copy, Send, Eye,
+  MessageCircle, Copy, Send, Eye, Link2,
 } from "lucide-react";
 import {
-  type Evento, type EventAttendee, type RsvpStato,
+  type Evento, type AttendeeRow, type RsvpStato,
   MODALITA_LABELS, MODALITA_BADGE, RSVP_LABELS, RSVP_BADGE,
+  BOOKING_LABELS, BOOKING_BADGE,
 } from "@/lib/types/events";
 import { buildWaLink, buildBroadcastText } from "@/lib/events/whatsapp";
 import { EVENT_CREATOR_QUALIFICHE, HIGH_VISIBILITY_QUALIFICHE } from "@/lib/auth/roles";
+import { EventBookingLinkCard } from "@/components/eventi/event-booking-link-card";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("it-IT", {
@@ -26,8 +28,9 @@ export default function EventoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [evento, setEvento] = useState<Evento | null>(null);
-  const [attendees, setAttendees] = useState<EventAttendee[]>([]);
+  const [attendees, setAttendees] = useState<AttendeeRow[]>([]);
   const [confermati, setConfermati] = useState(0);
+  const [inAttesa, setInAttesa] = useState(0);
   const [canManage, setCanManage] = useState(false);
   const [canViewAttendeesList, setCanViewAttendeesList] = useState(false);
   const [canSendReminderBtn, setCanSendReminderBtn] = useState(false);
@@ -36,6 +39,8 @@ export default function EventoDetailPage() {
   const [reminderSending, setReminderSending] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [bookingLinkUrl, setBookingLinkUrl] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   function showToast(msg: string) {
     setToast(msg);
@@ -64,7 +69,11 @@ export default function EventoDetailPage() {
     if (!canViewAttendeesList || !evento) return;
     fetch(`/api/events/${id}/attendees`)
       .then((r) => r.json())
-      .then((d) => { setAttendees(d.attendees || []); setConfermati(d.confermati || 0); });
+      .then((d) => {
+        setAttendees(d.attendees || []);
+        setConfermati(d.confermati || 0);
+        setInAttesa(d.inAttesa || 0);
+      });
   }, [canViewAttendeesList, evento, id]);
 
   async function handleRsvp(stato: RsvpStato) {
@@ -86,6 +95,14 @@ export default function EventoDetailPage() {
     if (!confirm("Eliminare questo evento?")) return;
     await fetch(`/api/events/${id}`, { method: "DELETE" });
     router.push("/eventi");
+  }
+
+  async function handleGenerateBookingLink() {
+    setGeneratingLink(true);
+    const res = await fetch(`/api/events/${id}/booking-link`, { method: "POST" });
+    const data = await res.json();
+    if (res.ok) setBookingLinkUrl(data.url);
+    setGeneratingLink(false);
   }
 
   async function handleSendReminder() {
@@ -155,6 +172,14 @@ export default function EventoDetailPage() {
           </div>
           {canManage && (
             <div className="flex gap-2 shrink-0">
+              <button
+                onClick={handleGenerateBookingLink}
+                disabled={generatingLink}
+                title="Genera link prenotazione pubblico"
+                className="p-2 rounded-xl border border-border hover:bg-bg-section transition-colors disabled:opacity-50"
+              >
+                <Link2 size={16} strokeWidth={1.75} className="text-text-secondary" />
+              </button>
               <button
                 onClick={() => router.push(`/eventi/${id}/modifica`)}
                 title="Modifica"
@@ -245,7 +270,7 @@ export default function EventoDetailPage() {
               <Users size={16} strokeWidth={1.75} className="text-accent" />
               Iscritti
               <span className="text-sm font-normal text-text-secondary">
-                ({confermati} confermati{evento.capienza_max ? ` / ${evento.capienza_max}` : ""})
+                ({confermati} confermati{inAttesa > 0 ? `, ${inAttesa} in lista d'attesa` : ""}{evento.capienza_max ? ` / ${evento.capienza_max}` : ""})
               </span>
             </h2>
             {/* Reminder actions */}
@@ -285,18 +310,23 @@ export default function EventoDetailPage() {
               {/* Mobile */}
               <div className="md:hidden space-y-2">
                 {attendees.map((a) => (
-                  <div key={a.user_id} className="flex items-center justify-between p-3 bg-bg-section rounded-xl">
+                  <div key={`${a.tipo}-${a.id}`} className="flex items-center justify-between p-3 bg-bg-section rounded-xl">
                     <div>
-                      <p className="text-sm font-medium text-text-primary">{a.profile?.nome}</p>
-                      <p className="text-xs text-text-secondary">{a.profile?.email}</p>
+                      <p className="text-sm font-medium text-text-primary">{a.nome}</p>
+                      <p className="text-xs text-text-secondary">
+                        {a.email}
+                        {a.tipo === "prospect" && a.partnerNome && ` · contatto di ${a.partnerNome}`}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${RSVP_BADGE[a.stato]}`}>
-                        {RSVP_LABELS[a.stato]}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        a.tipo === "partner" ? RSVP_BADGE[a.stato as RsvpStato] : BOOKING_BADGE[a.stato as "confermato" | "in_attesa" | "annullato"]
+                      }`}>
+                        {a.tipo === "partner" ? RSVP_LABELS[a.stato as RsvpStato] : BOOKING_LABELS[a.stato as "confermato" | "in_attesa" | "annullato"]}
                       </span>
-                      {a.profile?.telefono && (
+                      {a.telefono && (
                         <a
-                          href={buildWaLink(a.profile.telefono, a.profile.nome, evento)}
+                          href={buildWaLink(a.telefono, a.nome, evento)}
                           target="_blank"
                           rel="noopener"
                           className="p-1.5 rounded-lg bg-[#25D366] text-white"
@@ -313,7 +343,7 @@ export default function EventoDetailPage() {
               <table className="hidden md:table w-full text-sm">
                 <thead>
                   <tr className="border-b border-divider">
-                    {["Nome","Email","Stato","WA"].map((h) => (
+                    {["Nome","Email","Riferimento","Stato","WA"].map((h) => (
                       <th key={h} className="text-left text-xs font-semibold text-text-secondary px-3 py-2 uppercase tracking-wide">
                         {h}
                       </th>
@@ -322,18 +352,23 @@ export default function EventoDetailPage() {
                 </thead>
                 <tbody>
                   {attendees.map((a) => (
-                    <tr key={a.user_id} className="border-b border-divider last:border-0">
-                      <td className="px-3 py-2.5 font-medium text-text-primary">{a.profile?.nome}</td>
-                      <td className="px-3 py-2.5 text-text-secondary">{a.profile?.email}</td>
+                    <tr key={`${a.tipo}-${a.id}`} className="border-b border-divider last:border-0">
+                      <td className="px-3 py-2.5 font-medium text-text-primary">{a.nome}</td>
+                      <td className="px-3 py-2.5 text-text-secondary">{a.email}</td>
+                      <td className="px-3 py-2.5 text-text-secondary">
+                        {a.tipo === "partner" ? "Partner" : (a.partnerNome ? `Contatto di ${a.partnerNome}` : "Prospect")}
+                      </td>
                       <td className="px-3 py-2.5">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${RSVP_BADGE[a.stato]}`}>
-                          {RSVP_LABELS[a.stato]}
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          a.tipo === "partner" ? RSVP_BADGE[a.stato as RsvpStato] : BOOKING_BADGE[a.stato as "confermato" | "in_attesa" | "annullato"]
+                        }`}>
+                          {a.tipo === "partner" ? RSVP_LABELS[a.stato as RsvpStato] : BOOKING_LABELS[a.stato as "confermato" | "in_attesa" | "annullato"]}
                         </span>
                       </td>
                       <td className="px-3 py-2.5">
-                        {a.profile?.telefono ? (
+                        {a.telefono ? (
                           <a
-                            href={buildWaLink(a.profile.telefono, a.profile.nome, evento)}
+                            href={buildWaLink(a.telefono, a.nome, evento)}
                             target="_blank"
                             rel="noopener"
                             className="inline-flex items-center gap-1 text-xs bg-[#25D366] text-white px-2 py-1 rounded-lg"
@@ -348,6 +383,21 @@ export default function EventoDetailPage() {
               </table>
             </>
           )}
+        </div>
+      )}
+
+      {/* Modal link prenotazione */}
+      {bookingLinkUrl && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-semibold text-text-primary">Link prenotazione pubblico</h3>
+              <button onClick={() => setBookingLinkUrl(null)} className="text-text-secondary hover:text-text-primary">✕</button>
+            </div>
+            <div className="p-4">
+              <EventBookingLinkCard url={bookingLinkUrl} />
+            </div>
+          </div>
         </div>
       )}
 
