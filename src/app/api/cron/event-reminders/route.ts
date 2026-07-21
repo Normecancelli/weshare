@@ -5,10 +5,10 @@ import { buildReminderEmail, type ReminderTier } from "@/lib/events/email";
 import { getConfirmedRecipients } from "@/lib/events/prenotazione";
 import type { Evento } from "@/lib/types/events";
 
-const TIERS: { tier: ReminderTier; flag: "reminder_sent_7d" | "reminder_sent_1d" | "reminder_sent_2h"; hoursAhead: number }[] = [
-  { tier: "7d", flag: "reminder_sent_7d", hoursAhead: 168 },
-  { tier: "1d", flag: "reminder_sent_1d", hoursAhead: 24 },
-  { tier: "2h", flag: "reminder_sent_2h", hoursAhead: 2 },
+const TIERS: { tier: ReminderTier; flag: "reminder_sent_7d" | "reminder_sent_1d" | "reminder_sent_2h"; minHours: number; maxHours: number }[] = [
+  { tier: "7d", flag: "reminder_sent_7d", minHours: 24, maxHours: 168 },
+  { tier: "1d", flag: "reminder_sent_1d", minHours: 2, maxHours: 24 },
+  { tier: "2h", flag: "reminder_sent_2h", minHours: 0, maxHours: 2 },
 ];
 
 export async function GET(request: NextRequest) {
@@ -27,14 +27,15 @@ export async function GET(request: NextRequest) {
   const now = new Date();
   const sentByTier: Record<ReminderTier, number> = { "7d": 0, "1d": 0, "2h": 0 };
 
-  for (const { tier, flag, hoursAhead } of TIERS) {
-    const threshold = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000).toISOString();
+  for (const { tier, flag, minHours, maxHours } of TIERS) {
+    const minThreshold = new Date(now.getTime() + minHours * 60 * 60 * 1000).toISOString();
+    const maxThreshold = new Date(now.getTime() + maxHours * 60 * 60 * 1000).toISOString();
     const { data: events, error: eventsError } = await admin
       .from("events")
       .select("*")
       .eq(flag, false)
-      .gt("data_inizio", now.toISOString())
-      .lte("data_inizio", threshold);
+      .gt("data_inizio", minThreshold)
+      .lte("data_inizio", maxThreshold);
 
     if (eventsError) {
       console.error(`[cron/event-reminders] Errore query tier ${tier}:`, eventsError);
