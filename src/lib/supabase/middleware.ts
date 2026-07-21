@@ -46,7 +46,8 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/api/anteprima/") ||
     path.startsWith("/api/contatto/") ||
     path.startsWith("/api/prospects/public/") ||
-    path.startsWith("/api/prenota/");
+    path.startsWith("/api/prenota/") ||
+    path.startsWith("/api/cron/");
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();

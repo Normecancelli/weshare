@@ -29,12 +29,16 @@ export async function GET(request: NextRequest) {
 
   for (const { tier, flag, hoursAhead } of TIERS) {
     const threshold = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000).toISOString();
-    const { data: events } = await admin
+    const { data: events, error: eventsError } = await admin
       .from("events")
       .select("*")
       .eq(flag, false)
       .gt("data_inizio", now.toISOString())
       .lte("data_inizio", threshold);
+
+    if (eventsError) {
+      console.error(`[cron/event-reminders] Errore query tier ${tier}:`, eventsError);
+    }
 
     for (const evento of events || []) {
       const recipients = await getConfirmedRecipients(admin, evento.id);
