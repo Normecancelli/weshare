@@ -1,66 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { buildReminderEmail } from "@/lib/events/email";
+import { buildReminderEmail, type ReminderTier } from "@/lib/events/email";
+import { getConfirmedRecipients } from "@/lib/events/prenotazione";
 import type { Evento } from "@/lib/types/events";
 
-function getDayRange(daysAhead: number): { from: string; to: string } {
-  const target = new Date();
-  target.setDate(target.getDate() + daysAhead);
-  const from = new Date(target);
-  from.setUTCHours(0, 0, 0, 0);
-  const to = new Date(target);
-  to.setUTCHours(23, 59, 59, 999);
-  return { from: from.toISOString(), to: to.toISOString() };
-}
-
-async function sendRemindersForDay(
-  supabase: ReturnType<typeof createAdminClient>,
-  resend: Resend,
-  daysAhead: 1 | 7,
-  globalTemplate: string | null
-): Promise<number> {
-  const { from, to } = getDayRange(daysAhead);
-  const flagField = daysAhead === 7 ? "reminder_sent_7d" : "reminder_sent_1d";
-
-  const { data: events } = await supabase
-    .from("events")
-    .select("*")
-    .gte("data_inizio", from)
-    .lte("data_inizio", to)
-    .eq(flagField, false);
-
-  if (!events?.length) return 0;
-
-  let total = 0;
-  for (const evento of events) {
-    const { data: attendees } = await supabase
-      .from("event_attendees")
-      .select("*, profile:profiles!user_id(nome, email)")
-      .eq("event_id", evento.id)
-      .eq("stato", "confermato");
-
-    for (const a of attendees || []) {
-      const profile = a.profile as { nome: string; email: string } | null;
-      if (!profile?.email) continue;
-      const { subject, html } = buildReminderEmail(
-        evento as Evento, profile.nome, daysAhead, globalTemplate
-      );
-      const { error } = await resend.emails.send({
-        from: "WeShare <noreply@growset.it>",
-        to: profile.email,
-        subject,
-        html,
-      });
-      if (!error) total++;
-    }
-
-    // Segna il flag per evitare doppi invii
-    await supabase.from("events").update({ [flagField]: true }).eq("id", evento.id);
-  }
-
-  return total;
-}
+const TIERS: { tier: ReminderTier; flag: "reminder_sent_7d" | "reminder_sent_1d" | "reminder_sent_2h"; hoursAhead: number }[] = [
+  { tier: "7d", flag: "reminder_sent_7d", hoursAhead: 168 },
+  { tier: "1d", flag: "reminder_sent_1d", hoursAhead: 24 },
+  { tier: "2h", flag: "reminder_sent_2h", hoursAhead: 2 },
+];
 
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization");
@@ -68,16 +17,41 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
   }
 
-  const supabase = createAdminClient();
+  const admin = createAdminClient();
   const resend = new Resend(process.env.RESEND_API_KEY);
 
-  const { data: flagData } = await supabase
+  const { data: flagData } = await admin
     .from("system_flags").select("value").eq("flag_name", "email_reminder_template").single();
   const globalTemplate = flagData?.value as string | null;
 
-  const sent7d = await sendRemindersForDay(supabase, resend, 7, globalTemplate);
-  const sent1d = await sendRemindersForDay(supabase, resend, 1, globalTemplate);
+  const now = new Date();
+  const sentByTier: Record<ReminderTier, number> = { "7d": 0, "1d": 0, "2h": 0 };
 
-  console.log(`[cron/event-reminders] sent: ${sent7d} (7gg) + ${sent1d} (1gg)`);
-  return NextResponse.json({ sent_7d: sent7d, sent_1d: sent1d });
+  for (const { tier, flag, hoursAhead } of TIERS) {
+    const threshold = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000).toISOString();
+    const { data: events } = await admin
+      .from("events")
+      .select("*")
+      .eq(flag, false)
+      .gt("data_inizio", now.toISOString())
+      .lte("data_inizio", threshold);
+
+    for (const evento of events || []) {
+      const recipients = await getConfirmedRecipients(admin, evento.id);
+      for (const r of recipients) {
+        const { subject, html } = buildReminderEmail(evento as Evento, r.nome, tier, globalTemplate);
+        const { error } = await resend.emails.send({
+          from: "WeShare <noreply@growset.it>",
+          to: r.email,
+          subject,
+          html,
+        });
+        if (!error) sentByTier[tier]++;
+      }
+      await admin.from("events").update({ [flag]: true }).eq("id", evento.id);
+    }
+  }
+
+  console.log("[cron/event-reminders]", sentByTier);
+  return NextResponse.json(sentByTier);
 }
