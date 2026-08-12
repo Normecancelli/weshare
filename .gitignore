@@ -8,3 +8,5 @@ tsconfig.tsbuildinfo
 .vercel
 test-parser.mjs
 .env*
+docs/*.PDF
+docs/*.pdf

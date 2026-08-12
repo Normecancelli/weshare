@@ -119,6 +119,30 @@ Tabelle principali:
 ### Branding
 - Icona app ufficiale generata dal logo WeShare (asset sorgente `docs/Weshare_icon_clipboard.png`, 500×500): `src/app/favicon.ico` (32×32, tab browser), `src/app/icon.png` (256×256, convenzione file Next.js), `src/app/apple-icon.png` (180×180, home screen iOS). Nessuna configurazione manuale in `layout.tsx` richiesta — Next.js le rileva ed espone automaticamente come `<link rel="icon">`/`apple-touch-icon`.
 
+### Eventi
+- CRUD eventi, pagina `/eventi` (tab Attivi/Storico, filtri, dettaglio, RSVP `confermato/forse/annullato`)
+- **AI genera titolo+descrizione** (`event-form.tsx`, modale "✨ Genera con AI"): `claude-haiku-4-5`, 3 varianti di tono da un'idea testuale breve. Tetto 5 generazioni gratuite a vita/utente, oltre serve chiave Anthropic personale (sezione Impostazioni)
+- **Reminder automatici a soglia** (7gg/1gg/2h prima), destinatari unificati partner (`event_attendees`) + prospect (`event_prospect_bookings`). Trigger: workflow GitHub Actions ogni 15 min (`.github/workflows/event-reminders.yml`), non cron Vercel nativo (piano Hobby = max 1 esecuzione/giorno, incompatibile con la cadenza 2h). Bottone manuale "Invia reminder" nel dettaglio evento usa la stessa logica
+
+### Prenotazione eventi (prospect)
+- Prospect senza account possono prenotarsi a un evento via link pubblico per-evento o dalla vetrina personale `/anteprima/[token]`
+- Lista iscritti unificata partner+prospect nel dettaglio evento, gestione capienza/lista d'attesa, email di conferma immediata (Resend)
+
+### Formazione / Presentazioni (contenuti)
+- `/formazione` e `/presentazioni`: libreria contenuti (`contenuti`), tema testo libero con autocomplete, icona per tema assegnata al volo nel form (set curato `lucide-react`, stesso ambito ovunque compaia il tema)
+- **Vetrina prospect** `/anteprima/[token]`: pagina pubblica (no login) con eventi + contenuti selezionati (`visibile_prospect`), link individuale per prospect, scadenza 30gg, rigenerabile, tracciato (visite/ultima apertura)
+
+### QR/Link acquisizione contatti
+- `/contatto/[slug]` (slug = `invite_url_slug` del partner, fisso, non scade): mini-form pubblico (nome, cognome, telefono, email) che crea/aggiorna la scheda `prospects` da solo, poi redirect alla vetrina `/anteprima/[token]`. Distinto da `/invite/[slug]` (reclutamento partner)
+
+### Ricevuta ordine (PDF + email + WhatsApp)
+- Sezione "Ricevuta" su `/ordini-clienti/[id]` (qualunque stato ordine): **Scarica PDF** (`GET /api/client-orders/[id]/receipt`, `@react-pdf/renderer`, senza VP/provvigioni), **Invia email** (`POST .../receipt/send-email`, Resend, richiede email cliente in anagrafica), **WhatsApp** (scarica PDF + apre `wa.me` precompilato, allegato manuale — no invio automatico)
+- Fuori scope attuale: numerazione progressiva, storico invii, invio automatico alla conferma ordine — vedi TODO aperti
+
+### Impostazioni
+- `/impostazioni`: foto profilo (bucket `avatars`, resize client-side 512×512), dati personali, profilo Amway (codice_amway read-only, qualifica, platino/diamante di riferimento), notifiche email, account (cambio password, logout)
+- Sezione chiave AI personale: campo per la propria `ANTHROPIC_API_KEY`, usata oltre il tetto gratuito di 5 generazioni AI eventi
+
 ## Sessioni di lavoro (timeline)
 
 - **2026-06-09**: Ordini Clienti Phase 1 completata, fix bug salva data, componenti icone, sidebar mobile, ricerca prodotti, parser listino, pagina dettaglio ordine, dashboard responsive, pannello promemoria
@@ -127,8 +151,16 @@ Tabelle principali:
 - **2026-06-12**: ✅ **Sessione A completata** — signup flow end-to-end (`/invite/[slug]`, `/registrati`, `/benvenuto`), fix sanitizzazione slug Unicode
 - **2026-06-20/21**: Contatti/Prospect Fase 1+2+3 completate (CRUD pipeline, appuntamenti+Google Calendar link, email/WhatsApp template, follow-up worklist, conversione cliente/partner, analytics)
 - **2026-06-21**: Icona app ufficiale (favicon, icon.png, apple-icon.png) da logo WeShare
+- **2026-07-01**: Sessione B Eventi in produzione (CRUD, `/eventi`, RSVP, migration eventi)
+- **2026-07-16**: AI genera titolo+descrizione evento; pagina Impostazioni + chiave AI personale costruita (mai fatto prima, nonostante lo spec fosse pronto da giugno)
+- **2026-07-17**: Formazione/Presentazioni (contenuti) + Vetrina prospect `/anteprima/[token]`; icone per tema
+- **2026-07-18**: QR/link fisso acquisizione contatti `/contatto/[slug]`
+- **2026-07-19**: Ricevuta ordine PDF + invio email (Resend) + WhatsApp
+- **2026-07-20/21**: Prenotazione eventi per prospect senza account; reminder eventi esteso a 3 soglie (7gg/1gg/2h) via GitHub Actions, sostituendo il cron nativo Vercel (piano Hobby, limite 1 esecuzione/giorno)
 
 ## Decisioni architetturali bloccate (per Sessione B + C)
+
+**Nota**: le decisioni sotto sono lo storico di come Sessione B (Eventi) e C sono state progettate — entrambe già costruite (vedi timeline sopra). Sezione mantenuta come riferimento architetturale, non come lavoro da fare.
 
 ### Registrazione
 - Link generico per sponsor `/invite/[slug]`, slug = `codice_amway`
@@ -178,69 +210,15 @@ CREATE TABLE event_attendees (
 
 ## TODO aperti
 
-1. **Sessione B**: CRUD eventi + pagine `/eventi` (lista, dettaglio, nuovo, RSVP) + migration 006
-2. **Sessione C**: dashboard pannello eventi + banner urgente + sidebar badge + `/impostazioni` + modal QR personale
-3. **Email reminder 24h** per eventi: cron Vercel + endpoint che scansiona event_attendees + invia via Resend (richiede Resend attivo, ✅ già pronto)
-4. **Settings/Impostazioni** (`/impostazioni`) — spec dettagliata Alejerry 2026-06-13:
+_Aggiornato 2026-08-13 — la lista precedente era ferma a giugno e descriveva come "da fare" feature già costruite a luglio (Sessione B/C, Impostazioni, reminder). Tracciamento corrente via mappa Wayfinder su GitHub Issues, vedi `docs/agents/issue-tracker.md`._
 
-   ```
-   ┌────────────────────────────────────────────────────────┐
-   │ Impostazioni                                           │
-   ├────────────────────────────────────────────────────────┤
-   │ 1. Foto profilo                                        │
-   │    [Avatar tondo grande]                               │
-   │    [Carica nuova foto]  [Rimuovi]                      │
-   │                                                        │
-   │ 2. Dati personali                                      │
-   │    Nome, Cognome, Cellulare                            │
-   │    Indirizzo, CAP, Città                               │
-   │                                                        │
-   │ 3. Profilo Amway                                       │
-   │    Codice Amway          ← READ-ONLY (no edit)         │
-   │    Codice attività       ← NUOVO campo DB              │
-   │    Qualifica [dropdown]                                │
-   │    Data ingresso                                       │
-   │    Platino di riferimento [autocomplete]               │
-   │    Diamante di riferimento [autocomplete] ← NUOVO      │
-   │                                                        │
-   │ 4. Notifiche email                                     │
-   │    [✓] Reminder eventi 72h e 24h prima                 │
-   │    [✓] Riepilogo settimanale                           │
-   │    [✓] Compleanni / date da ricordare clienti          │
-   │                                                        │
-   │ 5. Account                                             │
-   │    Email (read-only) — "Per cambiare contatta admin"   │
-   │    [Cambia password] → /auth/update-password           │
-   │    [Esci]                                              │
-   └────────────────────────────────────────────────────────┘
-   ```
+1. **Ricevute clienti — flusso oltre l'invio manuale**: da definire cosa manca al di là di download PDF / invio email manuale / WhatsApp precompilato (es. invio automatico alla conferma ordine, storico invii, numerazione progressiva). Ticket aperto sulla mappa Wayfinder.
+2. **Conferma pre-import listino** (~15 min): dialog "stai per sovrascrivere X prezzi e disattivare Y prodotti, mese rilevato: M". Endpoint preview-mode che parsa senza scrivere
+3. **Modifica articoli ordine già confermato**: oggi non si può cambiare items di un ordine confermato. Da decidere se aprirlo per stato `confermato` o solo `bozza`
+4. **Wa.me intelligenti templates**: oltre al pannello promemoria, aggiungere template per "follow-up cliente", "sollecito ordine programmato" (zero infra, manual click)
+5. **OpenWA companion desktop** (rimandato): app desktop opt-in che gira sul Mac del partner, parla con la nostra API per template+contatti, usa OpenWA in locale per inviare. Modello distribuito = rischio per-utente
 
-   **Schema DB — Migration 006:**
-   - `profiles.foto_url TEXT NULL` — URL Supabase Storage bucket `avatars` (pubblico)
-   - `profiles.cap TEXT NULL`
-   - `profiles.codice_attivita TEXT NULL` — codice attività Amway (diverso da `codice_amway` distributore)
-   - `profiles.diamante_riferimento_id UUID NULL REFERENCES profiles(id)` — analogo a `platino_riferimento_id`
-   - `profiles.preferenze_notifiche JSONB DEFAULT '{"reminder_eventi":true,"riepilogo_settimanale":true,"date_clienti":true}'` (già esiste, definire shape definitivo)
-
-   **Storage:** bucket `avatars` pubblico, policy upload solo `auth.uid()`, path `{user_id}/avatar.jpg`. Resize lato client a 512×512 con Canvas API (no deps esterne).
-
-   **Endpoint nuovi:**
-   - `POST /api/profile/avatar` (upload foto, multipart)
-   - `DELETE /api/profile/avatar` (rimuovi)
-   - `PATCH /api/profile` (update dati personali, Amway, notifiche)
-   - `GET /api/sponsor/[slug]` → aggiungere `foto_url` al payload
-
-   **UI riusabile:** `<Avatar size="..." profile={...} />` — mostra foto se `foto_url`, fallback iniziali. Usare in sidebar, lista team, landing invito, customer-picker, ovunque oggi appaiano iniziali.
-
-   **Vincoli:**
-   - `codice_amway` immutabile da UI (solo admin può modificare via DB)
-   - Cambio email passa per admin (messaggio precompilato verso `alessandro@iseven.it`)
-   - Cambio password riusa flusso esistente `/auth/update-password`
-5. **Conferma pre-import listino** (~15 min): dialog "stai per sovrascrivere X prezzi e disattivare Y prodotti, mese rilevato: M". Endpoint preview-mode che parsa senza scrivere
-6. **Modifica articoli ordine già confermato**: oggi non si può cambiare items di un ordine confermato. Da decidere se aprirlo per stato `confermato` o solo `bozza`
-7. **Wa.me intelligenti templates**: oltre al pannello promemoria, aggiungere template per "follow-up cliente", "sollecito ordine programmato" (zero infra, manual click)
-8. **OpenWA companion desktop** (rimandato): app desktop opt-in che gira sul Mac del partner, parla con la nostra API per template+contatti, usa OpenWA in locale per inviare. Modello distribuito = rischio per-utente
-9. ✅ **Migrazione dominio a `weshare.growset.it`** — completata 2026-06-29. DNS CNAME su Aruba, dominio aggiunto su Vercel, Site URL e Redirect URLs aggiornati su Supabase. Tenere `metodo.growset.it` attivo in parallelo qualche settimana per i link già condivisi.
+**Fuori scope / backlog separato**: debito lint pre-esistente (21 errori, in gran parte regola `react-hooks/set-state-in-effect` su codice funzionante) — non bloccante, da affrontare in un effort dedicato.
 
 ## Convenzioni di codice
 
@@ -262,3 +240,19 @@ CREATE TABLE event_attendees (
 - Non rimuovere il check `isAdminRole` su endpoint admin
 - Non usare `display: none` per nascondere su mobile — usa Tailwind `hidden md:block`
 - Non costruire pricing/billing — il modello è free per il team
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+Issue tracciate su GitHub Issues (`github.com/Normecancelli/weshare`), via CLI `gh`. Vedi `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Etichette canoniche predefinite (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). Vedi `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Layout single-context (`CONTEXT.md` + `docs/adr/` alla radice, non ancora creati). Vedi `docs/agents/domain.md`.
