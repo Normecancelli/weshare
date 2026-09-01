@@ -8,6 +8,11 @@ const ALLOWED_TYPES: Record<string, string> = {
   "video/mp4": "mp4",
   "video/webm": "webm",
   "application/pdf": "pdf",
+  "audio/mpeg": "mp3",
+  "audio/mp4": "m4a",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+  "audio/ogg": "ogg",
 };
 
 export async function POST(request: NextRequest) {
@@ -30,7 +35,7 @@ export async function POST(request: NextRequest) {
   }
 
   const ext = ALLOWED_TYPES[file.type];
-  if (!ext) return NextResponse.json({ error: "Formato non supportato (mp4/webm/pdf)" }, { status: 400 });
+  if (!ext) return NextResponse.json({ error: "Formato non supportato (mp4/webm/pdf/mp3/m4a/wav/ogg)" }, { status: 400 });
 
   const limitBytes = UPLOAD_LIMIT_MB[tipo] * 1024 * 1024;
   if (file.size > limitBytes) {

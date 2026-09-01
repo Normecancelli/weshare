@@ -2,6 +2,7 @@
 
 import type { Contenuto, TemaIcona } from "@/lib/types/contenuti";
 import { IconaTemaIcon } from "@/components/contenuti/icona-tema-icon";
+import { isAudioFile } from "@/lib/contenuti/media";
 
 type Props = {
   contenuti: Contenuto[];
@@ -46,7 +47,9 @@ export function ContenutiGrid({ contenuti, temi, selectedTema, onTemaChange, onO
                       {c.tema}
                     </span>
                   )}
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-accent-glow text-accent">{c.media_tipo === "file" ? "File" : "Link"}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-accent-glow text-accent">
+                    {c.media_tipo === "file" ? (isAudioFile(c.file_path) ? "Audio" : "File") : "Link"}
+                  </span>
                 </div>
               </button>
               {canManage && (

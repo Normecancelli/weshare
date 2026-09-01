@@ -176,7 +176,7 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
               )}
               <input
                 type="file"
-                accept="video/mp4,video/webm,application/pdf"
+                accept="video/mp4,video/webm,application/pdf,audio/mpeg,audio/mp4,audio/wav,audio/ogg"
                 onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
                 className="text-sm"
               />
