@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Presentation, Plus } from "lucide-react";
+import { Mic, Plus } from "lucide-react";
 import { canCreateEvent } from "@/lib/auth/roles";
 import type { Contenuto, TemaIcona } from "@/lib/types/contenuti";
 import { ContenutiGrid } from "@/components/contenuti/contenuti-grid";
@@ -43,8 +43,8 @@ export default function PresentazioniPage() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <Presentation size={22} strokeWidth={1.75} className="text-accent" />
-          <h1 className="text-xl font-bold text-text-primary">Presentazioni</h1>
+          <Mic size={22} strokeWidth={1.75} className="text-accent" />
+          <h1 className="text-xl font-bold text-text-primary">Speech Audio</h1>
         </div>
         {canManage && (
           <button onClick={() => { setEditing(null); setShowForm(true); }} className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">

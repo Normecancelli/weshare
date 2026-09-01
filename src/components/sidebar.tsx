@@ -16,7 +16,7 @@ import {
   Wallet,
   Target,
   GraduationCap,
-  Presentation,
+  Mic,
   Settings,
   LogOut,
   X,
@@ -72,7 +72,7 @@ const menuSections: MenuSection[] = [
       { name: "Entrate", icon: Wallet, href: "/entrate" },
       { name: "Obiettivi", icon: Target, href: "/obiettivi" },
       { name: "Formazione", icon: GraduationCap, href: "/formazione" },
-      { name: "Presentazioni", icon: Presentation, href: "/presentazioni" },
+      { name: "Speech Audio", icon: Mic, href: "/presentazioni" },
     ],
   },
 ];
