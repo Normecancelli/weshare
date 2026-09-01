@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrashIcon } from "@/components/icons";
 import type { Product } from "@/lib/types/orders";
+import { extractDirectImageUrl } from "@/lib/products/extract-image-url";
 
 type Mode = "create" | "edit";
 
@@ -309,6 +310,14 @@ export function ProductFormModal({ mode, product, open, onClose, onSaved }: Prop
               type="url"
               value={form.image_url}
               onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData("text");
+                const direct = extractDirectImageUrl(pasted);
+                if (direct !== pasted) {
+                  e.preventDefault();
+                  setForm({ ...form, image_url: direct });
+                }
+              }}
               placeholder="https://..."
               className={inputClass}
             />
