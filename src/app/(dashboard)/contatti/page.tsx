@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { QrCode } from "lucide-react";
-import { ContactQrCard } from "@/components/prospects/contact-qr-card";
+import { LinkQrCard } from "@/components/ui/link-qr-card";
 import {
   type Prospect,
   type ProspectStato,
@@ -273,7 +273,12 @@ export default function ContattiPage() {
               <button onClick={() => setShowQr(false)} className="w-8 h-8 rounded-lg hover:bg-bg-section flex items-center justify-center text-text-secondary transition-all">✕</button>
             </div>
             <div className="p-5">
-              <ContactQrCard slug={mySlug} />
+              <LinkQrCard
+                slug={mySlug}
+                path="contatto"
+                description="Link fisso da condividere: chi lo apre compila un mini-form e diventa un tuo contatto in automatico."
+                downloadFilename="weshare-qr-contatti.png"
+              />
             </div>
           </div>
         </div>

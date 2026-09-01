@@ -1,14 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download } from "lucide-react";
+import { Check, Copy, Download } from "lucide-react";
 import { InlineMessage } from "@/components/ui/inline-message";
 
 type Props = {
   slug: string | null;
+  path: string;
+  description: string;
+  downloadFilename: string;
+  missingSlugMessage?: string;
 };
 
-export function ContactQrCard({ slug }: Props) {
+export function LinkQrCard({
+  slug,
+  path,
+  description,
+  downloadFilename,
+  missingSlugMessage = "Imposta il tuo codice Amway per generare il link.",
+}: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -18,8 +28,8 @@ export function ContactQrCard({ slug }: Props) {
       setUrl(null);
       return;
     }
-    setUrl(`${window.location.origin}/contatto/${slug}`);
-  }, [slug]);
+    setUrl(`${window.location.origin}/${path}/${slug}`);
+  }, [slug, path]);
 
   useEffect(() => {
     if (!url) {
@@ -46,18 +56,12 @@ export function ContactQrCard({ slug }: Props) {
   }
 
   if (!slug) {
-    return (
-      <InlineMessage variant="warning">
-        Imposta il tuo codice Amway per generare il link contatti.
-      </InlineMessage>
-    );
+    return <InlineMessage variant="warning">{missingSlugMessage}</InlineMessage>;
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-text-secondary">
-        Link fisso da condividere: chi lo apre compila un mini-form e diventa un tuo contatto in automatico.
-      </p>
+      <p className="text-sm text-text-secondary">{description}</p>
       <div className="flex gap-2">
         <input
           readOnly
@@ -66,18 +70,19 @@ export function ContactQrCard({ slug }: Props) {
         />
         <button
           onClick={copyLink}
-          className="px-3 py-2 rounded-xl text-sm font-semibold bg-bg-section text-text-primary hover:bg-accent-glow transition-all shrink-0"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold bg-bg-section text-text-primary hover:bg-accent-glow transition-all shrink-0"
         >
+          {copied ? <Check size={14} strokeWidth={2} /> : <Copy size={14} strokeWidth={2} />}
           {copied ? "Copiato!" : "Copia"}
         </button>
       </div>
       {qrDataUrl && (
         <div className="flex flex-col items-center gap-2 pt-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrDataUrl} alt="QR contatti" className="w-40 h-40 rounded-xl border border-border" />
+          <img src={qrDataUrl} alt="QR code" className="w-40 h-40 rounded-xl border border-border" />
           <a
             href={qrDataUrl}
-            download="weshare-qr-contatti.png"
+            download={downloadFilename}
             className="flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline"
           >
             <Download size={14} strokeWidth={2} />

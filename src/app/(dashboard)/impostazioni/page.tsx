@@ -2,9 +2,17 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Upload } from "lucide-react";
+import { Upload, User, Share2, Settings } from "lucide-react";
 import { Avatar } from "@/components/avatar";
-import { ContactQrCard } from "@/components/prospects/contact-qr-card";
+import { LinkQrCard } from "@/components/ui/link-qr-card";
+
+type SettingsTab = "profilo" | "inviti" | "account";
+
+const TABS: { key: SettingsTab; label: string; icon: typeof User }[] = [
+  { key: "profilo", label: "Profilo", icon: User },
+  { key: "inviti", label: "Inviti", icon: Share2 },
+  { key: "account", label: "Account", icon: Settings },
+];
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -84,6 +92,7 @@ function useRiferimentoAutocomplete(soloD: boolean) {
 
 export default function ImpostazioniPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [tab, setTab] = useState<SettingsTab>("profilo");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -268,6 +277,25 @@ export default function ImpostazioniPage() {
 
       <h1 className="text-xl font-bold text-text-primary">Impostazioni</h1>
 
+      <div className="flex gap-1 mb-2 overflow-x-auto pb-1">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap transition-all ${
+              tab === t.key
+                ? "bg-accent text-white"
+                : "bg-bg-section text-text-secondary hover:bg-bg-card"
+            }`}
+          >
+            <t.icon size={14} strokeWidth={2} />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "profilo" && (
+      <>
       {/* Foto profilo */}
       <div className={cardClass}>
         <h2 className="font-semibold text-text-primary">Foto profilo</h2>
@@ -413,13 +441,37 @@ export default function ImpostazioniPage() {
           )}
         </div>
       </div>
+      </>
+      )}
 
-      {/* My QrCode */}
+      {tab === "inviti" && (
+      <>
+      {/* Link contatti */}
       <div className={cardClass}>
-        <h2 className="font-semibold text-text-primary">My QrCode</h2>
-        <ContactQrCard slug={profile.invite_url_slug || profile.codice_amway} />
+        <h2 className="font-semibold text-text-primary">Link contatti</h2>
+        <LinkQrCard
+          slug={profile.invite_url_slug || profile.codice_amway}
+          path="contatto"
+          description="Link fisso da condividere: chi lo apre compila un mini-form e diventa un tuo contatto in automatico."
+          downloadFilename="weshare-qr-contatti.png"
+        />
       </div>
 
+      {/* Link invito partner */}
+      <div className={cardClass}>
+        <h2 className="font-semibold text-text-primary">Link invito partner</h2>
+        <LinkQrCard
+          slug={profile.invite_url_slug || profile.codice_amway}
+          path="invite"
+          description="Link fisso per far registrare un nuovo partner sotto di te."
+          downloadFilename="weshare-qr-invito-partner.png"
+        />
+      </div>
+      </>
+      )}
+
+      {tab === "account" && (
+      <>
       {/* Notifiche email */}
       <div className={cardClass}>
         <h2 className="font-semibold text-text-primary">Notifiche email</h2>
@@ -514,6 +566,8 @@ export default function ImpostazioniPage() {
           </button>
         </div>
       </div>
+      </>
+      )}
 
       <button
         onClick={handleSalva}
