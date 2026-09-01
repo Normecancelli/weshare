@@ -57,7 +57,7 @@ export async function POST(
     );
   }
 
-  const receiptId = receiptNumber(id);
+  const receiptId = receiptNumber(order);
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -72,6 +72,11 @@ export async function POST(
     if (sendError) {
       return NextResponse.json({ error: sendError.message }, { status: 500 });
     }
+
+    await supabase.from("receipt_email_log").insert({
+      order_id: id,
+      to_email: order.customer.email,
+    });
 
     return NextResponse.json({ sent: true });
   } catch {

@@ -32,8 +32,16 @@ const styles = StyleSheet.create({
   footerTitle: { fontWeight: 700, marginBottom: 4 },
 });
 
-export function receiptNumber(orderId: string): string {
-  return orderId.replace(/-/g, "").slice(0, 8).toUpperCase();
+export function receiptNumber(order: Pick<ClientOrder, "id" | "stato" | "numero_ricevuta">): string {
+  if (order.numero_ricevuta) return order.numero_ricevuta;
+  // Mai confermato (bozza, o annullato direttamente da bozza): nessun numero
+  // ancora assegnato, non mostrare un codice come se fosse definitivo.
+  if (order.stato === "bozza" || order.stato === "annullato") {
+    return "BOZZA — non ancora confermato";
+  }
+  // Ordine confermato prima dell'introduzione della numerazione progressiva:
+  // non retroattivo, mantiene il vecchio codice derivato dall'UUID.
+  return order.id.replace(/-/g, "").slice(0, 8).toUpperCase();
 }
 
 function formatDate(iso: string): string {
@@ -52,7 +60,7 @@ function ReceiptDocument({ order, partner }: { order: ClientOrder; partner: Part
         <View style={styles.header}>
           <Text style={styles.logo}>Amway</Text>
           <View style={styles.titleBlock}>
-            <Text style={styles.title}>MODULO D&apos;ORDINE — RICEVUTA N. {receiptNumber(order.id)}</Text>
+            <Text style={styles.title}>MODULO D&apos;ORDINE — RICEVUTA N. {receiptNumber(order)}</Text>
             <Text>Data: {formatDate(order.created_at)}</Text>
           </View>
         </View>

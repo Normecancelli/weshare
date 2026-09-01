@@ -19,7 +19,7 @@ export async function GET(
   const { data: order, error } = await supabase
     .from("client_orders")
     .select(
-      "*, customer:customers(id, nome, cognome, telefono, email)"
+      "*, customer:customers(id, nome, cognome, telefono, email), receipt_log:receipt_email_log(id, order_id, to_email, sent_at)"
     )
     .eq("id", id)
     .eq("partner_id", user.id)
@@ -74,6 +74,29 @@ export async function PUT(
         { error: "Nessun campo da aggiornare" },
         { status: 400 }
       );
+    }
+
+    // Prima conferma: assegna il prossimo numero ricevuta progressivo per
+    // l'anno corrente. Se l'ordine ha già un numero (riconfermato dopo
+    // "Riporta a bozza"), non ne consuma uno nuovo.
+    if (stato === "confermato") {
+      const { data: current } = await supabase
+        .from("client_orders")
+        .select("numero_ricevuta")
+        .eq("id", id)
+        .eq("partner_id", user.id)
+        .single();
+
+      if (current && !current.numero_ricevuta) {
+        const { data: numero, error: numeroError } = await supabase.rpc(
+          "next_receipt_number",
+          { p_anno: new Date().getFullYear() }
+        );
+        if (numeroError) {
+          return NextResponse.json({ error: numeroError.message }, { status: 500 });
+        }
+        updates.numero_ricevuta = numero;
+      }
     }
 
     const { data, error } = await supabase

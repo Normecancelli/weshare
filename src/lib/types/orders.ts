@@ -55,11 +55,20 @@ export interface ClientOrder {
   totale_vp: number;
   totale_provvigione: number;
   group_id: string | null;
+  numero_ricevuta: string | null;
   created_at: string;
   updated_at: string;
   // Joined fields
   customer?: Customer;
   items?: OrderItem[];
+  receipt_log?: ReceiptEmailLogEntry[];
+}
+
+export interface ReceiptEmailLogEntry {
+  id: string;
+  order_id: string;
+  to_email: string;
+  sent_at: string;
 }
 
 export interface OrderItem {

@@ -45,12 +45,18 @@ export async function GET(
     }
   );
 
-  const receiptId = receiptNumber(id);
+  // Content-Disposition è un header HTTP: deve restare ByteString/Latin1,
+  // niente em-dash o altri caratteri non-ASCII (es. "BOZZA — ..." crasha
+  // NextResponse). receiptNumber() resta libero per il testo nel PDF.
+  const filenameId = receiptNumber(order)
+    .replace(/[^\x20-\x7E]/g, "")
+    .trim()
+    .replace(/\s+/g, "-") || "bozza";
 
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="ricevuta-${receiptId}.pdf"`,
+      "Content-Disposition": `attachment; filename="ricevuta-${filenameId}.pdf"`,
     },
   });
 }

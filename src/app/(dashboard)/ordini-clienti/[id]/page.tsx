@@ -442,7 +442,14 @@ export default function OrdineDetailPage() {
 
       {/* Ricevuta */}
       <section className="bg-bg-card border border-border rounded-2xl p-5 mb-4">
-        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Ricevuta</div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs font-semibold text-text-secondary uppercase tracking-wide">Ricevuta</div>
+          {order.numero_ricevuta ? (
+            <span className="text-xs font-semibold text-text-secondary">N. {order.numero_ricevuta}</span>
+          ) : (order.stato === "bozza" || order.stato === "annullato") ? (
+            <span className="text-xs font-semibold text-coral">BOZZA — non ancora confermato</span>
+          ) : null}
+        </div>
         {receiptMessage && (
           <div className="mb-3">
             <InlineMessage variant={receiptMessage.variant}>{receiptMessage.text}</InlineMessage>
@@ -471,6 +478,22 @@ export default function OrdineDetailPage() {
             WhatsApp
           </button>
         </div>
+        {order.receipt_log && order.receipt_log.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">
+              Storico invii email
+            </div>
+            <ul className="space-y-1">
+              {[...order.receipt_log]
+                .sort((a, b) => b.sent_at.localeCompare(a.sent_at))
+                .map((entry) => (
+                  <li key={entry.id} className="text-sm text-text-secondary">
+                    {new Date(entry.sent_at).toLocaleString("it-IT")} — {entry.to_email}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       {/* Azioni */}
