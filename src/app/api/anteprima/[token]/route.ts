@@ -64,15 +64,27 @@ export async function GET(
     )
     .map((e) => ({ id: e.id, nome: e.nome, data_inizio: e.data_inizio, location: e.location }));
 
+  const contenutoIds = (contenutiRaw || []).map((c) => c.id);
+  const { data: likesRaw } = contenutoIds.length
+    ? await admin.from("contenuto_likes").select("contenuto_id").in("contenuto_id", contenutoIds)
+    : { data: [] as { contenuto_id: string }[] };
+  const likesCountById = new Map<string, number>();
+  for (const like of likesRaw || []) {
+    likesCountById.set(like.contenuto_id, (likesCountById.get(like.contenuto_id) || 0) + 1);
+  }
+
   const contenuti = (contenutiRaw || []).map((c) => ({
     id: c.id,
     titolo: c.titolo,
     descrizione: c.descrizione,
     tema: c.tema,
     media_tipo: c.media_tipo,
+    file_path: c.file_path,
     url: c.media_tipo === "link_esterno"
       ? c.url_esterno || ""
       : admin.storage.from("contenuti").getPublicUrl(c.file_path || "").data.publicUrl,
+    likes_count: likesCountById.get(c.id) || 0,
+    liked_by_me: false,
   }));
 
   const temiUsati = Array.from(

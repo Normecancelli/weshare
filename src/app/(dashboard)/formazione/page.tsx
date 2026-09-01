@@ -39,6 +39,11 @@ export default function FormazionePage() {
     fetchAll();
   }
 
+  async function handleToggleLike(c: Contenuto) {
+    await fetch(`/api/contenuti/${c.id}/like`, { method: "POST" });
+    fetchAll();
+  }
+
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -62,6 +67,8 @@ export default function FormazionePage() {
         canManage={canManage}
         onEdit={(c) => { setEditing(c); setShowForm(true); }}
         onDelete={handleDelete}
+        canLike={true}
+        onToggleLike={handleToggleLike}
       />
 
       {playing && <ContentPlayerModal contenuto={playing} onClose={() => setPlaying(null)} />}

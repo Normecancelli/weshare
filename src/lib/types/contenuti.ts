@@ -16,6 +16,9 @@ export interface Contenuto {
   updated_at: string;
   // aggiunto dall'API (non su DB): url pubblico risolto (storage o url_esterno)
   url: string;
+  // aggiunto dall'API (non su DB): aggregati like
+  likes_count: number;
+  liked_by_me: boolean;
 }
 
 export const TIPO_LABELS: Record<ContenutoTipo, string> = {

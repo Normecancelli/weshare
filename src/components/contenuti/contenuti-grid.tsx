@@ -1,5 +1,6 @@
 "use client";
 
+import { Heart } from "lucide-react";
 import type { Contenuto, TemaIcona } from "@/lib/types/contenuti";
 import { IconaTemaIcon } from "@/components/contenuti/icona-tema-icon";
 import { isAudioFile } from "@/lib/contenuti/media";
@@ -13,9 +14,11 @@ type Props = {
   canManage: boolean;
   onEdit: (contenuto: Contenuto) => void;
   onDelete: (contenuto: Contenuto) => void;
+  canLike: boolean;
+  onToggleLike: (contenuto: Contenuto) => void;
 };
 
-export function ContenutiGrid({ contenuti, temi, selectedTema, onTemaChange, onOpen, canManage, onEdit, onDelete }: Props) {
+export function ContenutiGrid({ contenuti, temi, selectedTema, onTemaChange, onOpen, canManage, onEdit, onDelete, canLike, onToggleLike }: Props) {
   const iconaPerTema = new Map(temi.map((t) => [t.tema, t.icona]));
 
   return (
@@ -52,12 +55,28 @@ export function ContenutiGrid({ contenuti, temi, selectedTema, onTemaChange, onO
                   </span>
                 </div>
               </button>
-              {canManage && (
-                <div className="flex gap-2 mt-3 pt-3 border-t border-divider">
-                  <button onClick={() => onEdit(c)} className="text-xs font-semibold text-accent hover:opacity-70">Modifica</button>
-                  <button onClick={() => onDelete(c)} className="text-xs font-semibold text-error hover:opacity-70">Elimina</button>
-                </div>
-              )}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-divider">
+                {canLike ? (
+                  <button
+                    onClick={() => onToggleLike(c)}
+                    className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${c.liked_by_me ? "text-coral" : "text-text-secondary hover:text-coral"}`}
+                  >
+                    <Heart size={14} strokeWidth={2} fill={c.liked_by_me ? "currentColor" : "none"} />
+                    {c.likes_count > 0 && c.likes_count}
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary">
+                    <Heart size={14} strokeWidth={2} />
+                    {c.likes_count > 0 && c.likes_count}
+                  </span>
+                )}
+                {canManage && (
+                  <div className="flex gap-2">
+                    <button onClick={() => onEdit(c)} className="text-xs font-semibold text-accent hover:opacity-70">Modifica</button>
+                    <button onClick={() => onDelete(c)} className="text-xs font-semibold text-error hover:opacity-70">Elimina</button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

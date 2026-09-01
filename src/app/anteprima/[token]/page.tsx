@@ -117,6 +117,8 @@ export default function AnteprimaPage() {
               canManage={false}
               onEdit={() => {}}
               onDelete={() => {}}
+              canLike={false}
+              onToggleLike={() => {}}
             />
           </section>
         )}

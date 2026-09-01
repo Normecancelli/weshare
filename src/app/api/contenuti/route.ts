@@ -29,7 +29,24 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const contenuti = (data || []).map((row) => ({ ...row, url: resolveUrl(supabase, row) }));
+  const ids = (data || []).map((row) => row.id);
+  const { data: likes } = ids.length
+    ? await supabase.from("contenuto_likes").select("contenuto_id, partner_id").in("contenuto_id", ids)
+    : { data: [] as { contenuto_id: string; partner_id: string }[] };
+
+  const likesCountById = new Map<string, number>();
+  const likedByMeIds = new Set<string>();
+  for (const like of likes || []) {
+    likesCountById.set(like.contenuto_id, (likesCountById.get(like.contenuto_id) || 0) + 1);
+    if (like.partner_id === user.id) likedByMeIds.add(like.contenuto_id);
+  }
+
+  const contenuti = (data || []).map((row) => ({
+    ...row,
+    url: resolveUrl(supabase, row),
+    likes_count: likesCountById.get(row.id) || 0,
+    liked_by_me: likedByMeIds.has(row.id),
+  }));
   return NextResponse.json({ contenuti });
 }
 
@@ -82,7 +99,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ contenuto: { ...data, url: resolveUrl(supabase, data) } }, { status: 201 });
+    return NextResponse.json(
+      { contenuto: { ...data, url: resolveUrl(supabase, data), likes_count: 0, liked_by_me: false } },
+      { status: 201 }
+    );
   } catch {
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
   }
