@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getFiscalYearBounds } from "@/lib/orders/fiscal-year";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -39,23 +40,37 @@ export async function GET(request: NextRequest) {
 
   // Stats
   const all = data || [];
+
+  // "Da raggruppare" e "completati" restano su tutti gli ordini (coda di
+  // lavoro corrente, non uno storico): un ordine confermato ma non ancora
+  // raggruppato va gestito indipendentemente da quando è stato creato.
   const daRaggruppare = all.filter(
     (o) => o.stato === "confermato"
   ).length;
   const completati = all.filter(
     (o) => o.stato === "completato"
   ).length;
-  const totaleVp = all
+
+  // Ordini totali / VP / Provvigioni: filtrati sull'anno fiscale Amway
+  // corrente, per coerenza con le card "Ordini anno fiscale Amway" sopra
+  // (altrimenti le due righe di statistiche raccontano periodi diversi).
+  const { start: fyStart, end: fyEnd } = getFiscalYearBounds(new Date());
+  const inFiscalYear = all.filter((o) => {
+    const d = new Date(o.created_at);
+    return d >= fyStart && d <= fyEnd;
+  });
+
+  const totaleVp = inFiscalYear
     .filter((o) => o.stato !== "annullato")
     .reduce((sum, o) => sum + (o.totale_vp || 0), 0);
-  const totaleProvvigione = all
+  const totaleProvvigione = inFiscalYear
     .filter((o) => o.stato !== "annullato")
     .reduce((sum, o) => sum + (o.totale_provvigione || 0), 0);
 
   return NextResponse.json({
     orders: all,
     stats: {
-      totale: all.length,
+      totale: inFiscalYear.length,
       daRaggruppare,
       completati,
       totaleVp: Math.round(totaleVp * 100) / 100,

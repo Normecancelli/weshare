@@ -300,6 +300,7 @@ export default function OrdiniClientiPage() {
         <StatCard
           label="Ordini totali"
           value={stats.totale}
+          subtitle="Anno fiscale in corso"
           color="accent"
         />
         <StatCard
@@ -310,11 +311,13 @@ export default function OrdiniClientiPage() {
         <StatCard
           label="VP Totali"
           value={stats.totaleVp.toFixed(2)}
+          subtitle="Anno fiscale in corso"
           color="lavender"
         />
         <StatCard
           label="Provvigioni"
           value={`€${stats.totaleProvvigione.toFixed(2)}`}
+          subtitle="Anno fiscale in corso"
           color="success"
         />
       </div>
