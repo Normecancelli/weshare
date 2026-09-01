@@ -1,5 +1,102 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function applyStockDelta(
+  supabase: SupabaseClient,
+  partnerId: string,
+  productId: string,
+  delta: number,
+) {
+  const { data: existing } = await supabase
+    .from("magazzino_items")
+    .select("id, quantita")
+    .eq("partner_id", partnerId)
+    .eq("product_id", productId)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("magazzino_items")
+      .update({ quantita: Math.max(0, existing.quantita + delta) })
+      .eq("id", existing.id);
+  } else {
+    await supabase
+      .from("magazzino_items")
+      .insert({ partner_id: partnerId, product_id: productId, quantita: Math.max(0, delta) });
+  }
+}
+
+// Muove magazzino_items per gli item di un ordine non ancora movimentati.
+// direction: "confirm" (prima conferma: incrementa per destinazione_uso
+// magazzino, decrementa per fonte magazzino) o "rollback" (annulla il
+// movimento fatto in precedenza, verso natura opposta). Su "confirm" valida
+// TUTTI gli item prima di scrivere qualunque cosa, per evitare scritture
+// parziali se un item successivo blocca la conferma.
+async function movimentaStock(
+  supabase: SupabaseClient,
+  partnerId: string,
+  orderId: string,
+  direction: "confirm" | "rollback",
+): Promise<string | null> {
+  const { data: allItems } = await supabase
+    .from("client_order_items")
+    .select("id, product_id, quantita, fonte, destinazione_uso, magazzino_movimentato")
+    .eq("order_id", orderId);
+
+  if (!allItems || allItems.length === 0) return null;
+
+  const pending = allItems.filter((item) => {
+    const isCarico = item.destinazione_uso === "magazzino";
+    const isScarico = item.fonte === "magazzino";
+    if (!isCarico && !isScarico) return false;
+    return direction === "confirm" ? !item.magazzino_movimentato : item.magazzino_movimentato;
+  });
+
+  if (pending.length === 0) return null;
+
+  if (direction === "confirm") {
+    const scaricoTotals = new Map<string, number>();
+    for (const item of pending) {
+      if (item.fonte === "magazzino") {
+        scaricoTotals.set(item.product_id, (scaricoTotals.get(item.product_id) || 0) + item.quantita);
+      }
+    }
+    for (const [productId, needed] of scaricoTotals) {
+      const { data: current } = await supabase
+        .from("magazzino_items")
+        .select("quantita")
+        .eq("partner_id", partnerId)
+        .eq("product_id", productId)
+        .maybeSingle();
+      if (!current || current.quantita < needed) {
+        return `Stock insufficiente per un prodotto dell'ordine (disponibili: ${current?.quantita ?? 0}, richiesti: ${needed})`;
+      }
+    }
+
+    for (const item of pending) {
+      const isCarico = item.destinazione_uso === "magazzino";
+      const delta = isCarico ? item.quantita : -item.quantita;
+      await applyStockDelta(supabase, partnerId, item.product_id, delta);
+      await supabase
+        .from("client_order_items")
+        .update({ magazzino_movimentato: true })
+        .eq("id", item.id);
+    }
+  } else {
+    for (const item of pending) {
+      const isCarico = item.destinazione_uso === "magazzino";
+      const delta = isCarico ? -item.quantita : item.quantita;
+      await applyStockDelta(supabase, partnerId, item.product_id, delta);
+      await supabase
+        .from("client_order_items")
+        .update({ magazzino_movimentato: false })
+        .eq("id", item.id);
+    }
+  }
+
+  return null;
+}
 
 export async function GET(
   _request: NextRequest,
@@ -97,6 +194,17 @@ export async function PUT(
         }
         updates.numero_ricevuta = numero;
       }
+    }
+
+    if (stato === "confermato") {
+      const stockError = await movimentaStock(supabase, user.id, id, "confirm");
+      if (stockError) {
+        return NextResponse.json({ error: stockError }, { status: 409 });
+      }
+    }
+
+    if (stato === "bozza" || stato === "annullato") {
+      await movimentaStock(supabase, user.id, id, "rollback");
     }
 
     const { data, error } = await supabase
