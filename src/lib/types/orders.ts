@@ -27,6 +27,7 @@ export interface Customer {
   citta: string | null;
   note: string | null;
   created_at: string;
+  is_interno: boolean;
 }
 
 export interface CustomerDate {
@@ -41,6 +42,7 @@ export type OrderStatus = "bozza" | "confermato" | "in_gruppo" | "completato" | 
 export type OrderChannel = "whatsapp" | "presenza" | "telefono";
 export type CartType = "personale" | "non_registrato" | "programmato";
 export type ItemSource = "amway" | "magazzino";
+export type DestinazioneUso = "magazzino" | "personale";
 export type GroupStatus = "aperto" | "caricato" | "confermato";
 
 export interface ClientOrder {
@@ -81,6 +83,8 @@ export interface OrderItem {
   punti_vp: number;
   provvigione: number;
   fonte: ItemSource;
+  destinazione_uso: DestinazioneUso | null;
+  magazzino_movimentato: boolean;
   note: string | null;
   // Joined fields
   product?: Product;
