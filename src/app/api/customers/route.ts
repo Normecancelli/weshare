@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     .from("customers")
     .select("*")
     .eq("partner_id", user.id)
+    .eq("is_interno", false)
     .order("nome", { ascending: true });
 
   if (search) {
