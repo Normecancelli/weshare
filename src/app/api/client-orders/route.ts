@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     const orderItems = items.map(
-      (item: { product_id: string; quantita: number; note?: string }) => {
+      (item: { product_id: string; quantita: number; note?: string; fonte?: "amway" | "magazzino"; destinazione_uso?: "magazzino" | "personale" }) => {
         const product = productMap.get(item.product_id)!;
         const qty = item.quantita || 1;
 
@@ -147,7 +147,8 @@ export async function POST(request: NextRequest) {
           prezzo_unitario_partner: product.prezzo_partner,
           punti_vp: product.punti_vp,
           provvigione: product.provvigione,
-          fonte: "amway" as const,
+          fonte: item.fonte || "amway",
+          destinazione_uso: item.destinazione_uso || null,
           note: item.note || null,
         };
       }

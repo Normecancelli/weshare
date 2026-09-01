@@ -44,24 +44,51 @@ export async function PATCH(
     );
   }
 
-  let body: { quantita?: number };
+  let body: { quantita?: number; fonte?: string; destinazione_uso?: string | null };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
   }
 
-  const quantita = Math.floor(body.quantita ?? 0);
-  if (quantita < 1) {
-    return NextResponse.json(
-      { error: "La quantità deve essere almeno 1" },
-      { status: 400 },
-    );
+  const updates: Record<string, unknown> = {};
+
+  if (body.quantita !== undefined) {
+    const quantita = Math.floor(body.quantita);
+    if (quantita < 1) {
+      return NextResponse.json({ error: "La quantità deve essere almeno 1" }, { status: 400 });
+    }
+    updates.quantita = quantita;
+  }
+
+  if (body.fonte !== undefined || body.destinazione_uso !== undefined) {
+    if (order.stato !== "bozza") {
+      return NextResponse.json(
+        { error: "Fonte/destinazione modificabili solo mentre l'ordine è in bozza" },
+        { status: 409 },
+      );
+    }
+    if (body.fonte !== undefined) {
+      if (!["amway", "magazzino"].includes(body.fonte)) {
+        return NextResponse.json({ error: "Fonte non valida" }, { status: 400 });
+      }
+      updates.fonte = body.fonte;
+    }
+    if (body.destinazione_uso !== undefined) {
+      if (body.destinazione_uso !== null && !["magazzino", "personale"].includes(body.destinazione_uso)) {
+        return NextResponse.json({ error: "Destinazione non valida" }, { status: 400 });
+      }
+      updates.destinazione_uso = body.destinazione_uso;
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: "Nessun campo da aggiornare" }, { status: 400 });
   }
 
   const { error } = await supabase
     .from("client_order_items")
-    .update({ quantita })
+    .update(updates)
     .eq("id", itemId)
     .eq("order_id", id);
 

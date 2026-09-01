@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  let body: { customer_id?: string; product_id?: string; quantita?: number };
+  let body: { customer_id?: string; product_id?: string; quantita?: number; fonte?: string };
   try {
     body = await request.json();
   } catch {
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
 
   const { customer_id, product_id } = body;
   const quantita = Math.max(1, Math.floor(body.quantita ?? 1));
+  const fonte = body.fonte === "magazzino" ? "magazzino" : "amway";
 
   if (!customer_id || !product_id) {
     return NextResponse.json(
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
         prezzo_unitario_partner: product.prezzo_partner,
         punti_vp: product.punti_vp,
         provvigione: product.provvigione,
-        fonte: "amway",
+        fonte,
       });
     }
   } else {
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
         prezzo_unitario_partner: product.prezzo_partner,
         punti_vp: product.punti_vp,
         provvigione: product.provvigione,
-        fonte: "amway",
+        fonte,
       });
 
     if (itemErr) {
