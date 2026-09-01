@@ -25,20 +25,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
   }
 
-  const formData = await request.formData();
-  const file = formData.get("file") as File | null;
-  const tipo = formData.get("tipo") as ContenutoTipo | null;
+  const { tipo, mimeType, size } = (await request.json()) as {
+    tipo: ContenutoTipo; mimeType: string; size: number;
+  };
 
-  if (!file) return NextResponse.json({ error: "File mancante" }, { status: 400 });
   if (!tipo || !(tipo in UPLOAD_LIMIT_MB)) {
     return NextResponse.json({ error: "Tipo contenuto non valido" }, { status: 400 });
   }
 
-  const ext = ALLOWED_TYPES[file.type];
+  const ext = ALLOWED_TYPES[mimeType];
   if (!ext) return NextResponse.json({ error: "Formato non supportato (mp4/webm/pdf/mp3/m4a/wav/ogg)" }, { status: 400 });
 
   const limitBytes = UPLOAD_LIMIT_MB[tipo] * 1024 * 1024;
-  if (file.size > limitBytes) {
+  if (size > limitBytes) {
     return NextResponse.json(
       { error: `File troppo grande (max ${UPLOAD_LIMIT_MB[tipo]}MB per ${tipo})` },
       { status: 400 }
@@ -46,14 +45,11 @@ export async function POST(request: NextRequest) {
   }
 
   const path = `${crypto.randomUUID()}/file.${ext}`;
-  const buffer = await file.arrayBuffer();
+  const { data, error } = await supabase.storage.from("contenuti").createSignedUploadUrl(path);
 
-  const { error: uploadError } = await supabase.storage
-    .from("contenuti")
-    .upload(path, buffer, { contentType: file.type });
+  if (error || !data) {
+    return NextResponse.json({ error: error?.message || "Errore generazione URL upload" }, { status: 500 });
+  }
 
-  if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
-
-  const { data: { publicUrl } } = supabase.storage.from("contenuti").getPublicUrl(path);
-  return NextResponse.json({ file_path: path, url: publicUrl });
+  return NextResponse.json({ path: data.path, token: data.token });
 }

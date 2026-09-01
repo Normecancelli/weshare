@@ -6,6 +6,7 @@ import { UPLOAD_LIMIT_MB } from "@/lib/types/contenuti";
 import { InlineMessage } from "@/components/ui/inline-message";
 import { ICONE_TEMA_DISPONIBILI, type IconaTema } from "@/lib/contenuti/icone-temi";
 import { IconaTemaIcon } from "@/components/contenuti/icona-tema-icon";
+import { createClient } from "@/lib/supabase/client";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl text-sm border border-border bg-bg-main focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -47,17 +48,34 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
   async function handleUpload(file: File) {
     setError("");
     setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("tipo", tipo);
-    const res = await fetch("/api/contenuti/upload", { method: "POST", body: fd });
-    const d = await res.json();
-    if (res.ok) {
-      setFilePath(d.file_path);
-    } else {
-      setError(d.error || "Errore durante il caricamento");
+    try {
+      const urlRes = await fetch("/api/contenuti/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo, mimeType: file.type, size: file.size }),
+      });
+      if (!urlRes.ok) {
+        const d = await urlRes.json().catch(() => ({}));
+        setError(d.error || "Errore durante il caricamento");
+        return;
+      }
+      const { path, token } = await urlRes.json();
+
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage
+        .from("contenuti")
+        .uploadToSignedUrl(path, token, file);
+
+      if (uploadError) {
+        setError(uploadError.message || "Errore durante il caricamento");
+        return;
+      }
+      setFilePath(path);
+    } catch {
+      setError("Errore durante il caricamento — riprova");
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {

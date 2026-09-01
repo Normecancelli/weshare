@@ -27,8 +27,8 @@ export const TIPO_LABELS: Record<ContenutoTipo, string> = {
 };
 
 export const UPLOAD_LIMIT_MB: Record<ContenutoTipo, number> = {
-  formazione: 50,
-  presentazione: 15,
+  formazione: 100,
+  presentazione: 100,
 };
 
 export interface TemaIcona {
