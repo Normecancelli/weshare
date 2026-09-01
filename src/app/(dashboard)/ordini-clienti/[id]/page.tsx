@@ -37,6 +37,7 @@ export default function OrdineDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [updatingItem, setUpdatingItem] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [stockMap, setStockMap] = useState<Record<string, number>>({});
   const [addingProduct, setAddingProduct] = useState(false);
   const [vpWarning, setVpWarning] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -65,6 +66,13 @@ export default function OrdineDetailPage() {
     fetch("/api/products")
       .then((r) => r.json())
       .then((d) => setProducts(d.products || []));
+    fetch("/api/magazzino")
+      .then((r) => r.json())
+      .then((d) => {
+        const map: Record<string, number> = {};
+        for (const item of d.items || []) map[item.product_id] = item.quantita;
+        setStockMap(map);
+      });
   }, []);
 
   const editable = order?.stato === "bozza" || order?.stato === "confermato";
@@ -313,6 +321,7 @@ export default function OrdineDetailPage() {
               products={products}
               onSelect={addProduct}
               placeholder={addingProduct ? "Aggiunta in corso..." : "Cerca prodotto da aggiungere..."}
+              stockMap={stockMap}
             />
           </div>
         )}

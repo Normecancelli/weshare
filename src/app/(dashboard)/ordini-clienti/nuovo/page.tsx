@@ -9,6 +9,8 @@ import type { Product, Customer, OrderChannel } from "@/lib/types/orders";
 interface CartItem {
   product: Product;
   quantita: number;
+  fonte: "amway" | "magazzino";
+  destinazione_uso: "magazzino" | "personale" | null;
 }
 
 export default function NuovoOrdinePage() {
@@ -28,14 +30,19 @@ export default function NuovoOrdinePage() {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickAdd, setQuickAdd] = useState({ nome: "", cognome: "", telefono: "" });
   const [quickAddSaving, setQuickAddSaving] = useState(false);
+  const [stockMap, setStockMap] = useState<Record<string, number>>({});
 
   useEffect(() => {
     Promise.all([
       fetch("/api/customers").then((r) => r.json()),
       fetch("/api/products").then((r) => r.json()),
-    ]).then(([custData, prodData]) => {
+      fetch("/api/magazzino").then((r) => r.json()),
+    ]).then(([custData, prodData, magData]) => {
       setCustomers(custData.customers || []);
       setProducts(prodData.products || []);
+      const map: Record<string, number> = {};
+      for (const item of magData.items || []) map[item.product_id] = item.quantita;
+      setStockMap(map);
       setLoading(false);
     });
   }, []);
@@ -68,7 +75,7 @@ export default function NuovoOrdinePage() {
             : i
         );
       }
-      return [...prev, { product, quantita: 1 }];
+      return [...prev, { product, quantita: 1, fonte: "amway", destinazione_uso: null }];
     });
   }
 
@@ -88,8 +95,20 @@ export default function NuovoOrdinePage() {
     setItems((prev) => prev.filter((i) => i.product.id !== productId));
   }
 
+  function setItemFonte(productId: string, fonte: "amway" | "magazzino") {
+    setItems((prev) => prev.map((i) => (i.product.id === productId ? { ...i, fonte } : i)));
+  }
+
+  function setItemDestinazione(productId: string, destinazione_uso: "magazzino" | "personale") {
+    setItems((prev) => prev.map((i) => (i.product.id === productId ? { ...i, destinazione_uso } : i)));
+  }
+
   async function handleSubmit(asBozza: boolean) {
     if (!selectedCustomer || items.length === 0) return;
+    if (isPersonalOrder && items.some((i) => !i.destinazione_uso)) {
+      alert("Scegli 'Stock' o 'Uso personale' per ogni prodotto prima di salvare.");
+      return;
+    }
 
     setSaving(true);
     const res = await fetch("/api/client-orders", {
@@ -102,6 +121,8 @@ export default function NuovoOrdinePage() {
         items: items.map((i) => ({
           product_id: i.product.id,
           quantita: i.quantita,
+          fonte: i.fonte,
+          destinazione_uso: i.destinazione_uso,
         })),
       }),
     });
@@ -367,7 +388,7 @@ export default function NuovoOrdinePage() {
                       : i,
                   );
                 }
-                return [...prev, { product, quantita: it.quantita }];
+                return [...prev, { product, quantita: it.quantita, fonte: "amway", destinazione_uso: null }];
               });
             }
           }}
@@ -379,7 +400,7 @@ export default function NuovoOrdinePage() {
         <div className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">
           Prodotti
         </div>
-        <ProductSearch products={products} onSelect={addProduct} />
+        <ProductSearch products={products} onSelect={addProduct} stockMap={stockMap} />
 
         {items.length > 0 && (
           <div className="mt-4 space-y-2">
@@ -396,6 +417,41 @@ export default function NuovoOrdinePage() {
                     {"€"}{item.product.prezzo_cliente.toFixed(2)} ·{" "}
                     {item.product.punti_vp.toFixed(2)} VP
                   </div>
+                  {isPersonalOrder ? (
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setItemDestinazione(item.product.id, "magazzino")}
+                        className={`text-xs px-2 py-1 rounded-lg border ${item.destinazione_uso === "magazzino" ? "border-accent bg-accent-glow text-accent" : "border-border text-text-secondary"}`}
+                      >
+                        Stock
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setItemDestinazione(item.product.id, "personale")}
+                        className={`text-xs px-2 py-1 rounded-lg border ${item.destinazione_uso === "personale" ? "border-accent bg-accent-glow text-accent" : "border-border text-text-secondary"}`}
+                      >
+                        Uso personale
+                      </button>
+                    </div>
+                  ) : stockMap[item.product.id] > 0 ? (
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setItemFonte(item.product.id, "amway")}
+                        className={`text-xs px-2 py-1 rounded-lg border ${item.fonte === "amway" ? "border-accent bg-accent-glow text-accent" : "border-border text-text-secondary"}`}
+                      >
+                        Amway
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setItemFonte(item.product.id, "magazzino")}
+                        className={`text-xs px-2 py-1 rounded-lg border ${item.fonte === "magazzino" ? "border-accent bg-accent-glow text-accent" : "border-border text-text-secondary"}`}
+                      >
+                        Da Stock ({stockMap[item.product.id]})
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button

@@ -7,12 +7,14 @@ interface ProductSearchProps {
   products: Product[];
   onSelect: (product: Product) => void;
   placeholder?: string;
+  stockMap?: Record<string, number>;
 }
 
 export function ProductSearch({
   products,
   onSelect,
   placeholder = "Cerca per nome o codice...",
+  stockMap = {},
 }: ProductSearchProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -117,6 +119,11 @@ export function ProductSearch({
                   cod. {product.codice_amway}
                   {product.contenuto && ` · ${product.contenuto}`}
                 </div>
+                {stockMap[product.id] > 0 && (
+                  <div className="text-xs text-accent font-semibold">
+                    Stock: {stockMap[product.id]}
+                  </div>
+                )}
               </div>
               <div className="text-right shrink-0 ml-3">
                 <div className="font-semibold text-sm">
