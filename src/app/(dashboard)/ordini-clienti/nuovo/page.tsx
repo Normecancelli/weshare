@@ -19,6 +19,7 @@ export default function NuovoOrdinePage() {
   const [saving, setSaving] = useState(false);
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isPersonalOrder, setIsPersonalOrder] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [showCustomerList, setShowCustomerList] = useState(false);
   const [canale, setCanale] = useState<OrderChannel>("presenza");
@@ -120,6 +121,16 @@ export default function NuovoOrdinePage() {
     setSaving(false);
   }
 
+  async function handleUsoPersonale() {
+    const res = await fetch("/api/customers/uso-personale", { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      setSelectedCustomer(data.customer);
+      setIsPersonalOrder(true);
+      setShowCustomerList(false);
+    }
+  }
+
   async function handleQuickAddCustomer(e: React.FormEvent) {
     e.preventDefault();
     if (!quickAdd.nome.trim()) return;
@@ -196,6 +207,7 @@ export default function NuovoOrdinePage() {
             <button
               onClick={() => {
                 setSelectedCustomer(null);
+                setIsPersonalOrder(false);
                 setShowCustomerList(true);
               }}
               className="text-xs text-accent font-semibold"
@@ -205,6 +217,13 @@ export default function NuovoOrdinePage() {
           </div>
         ) : (
           <div>
+            <button
+              type="button"
+              onClick={handleUsoPersonale}
+              className="w-full mb-2 text-left px-4 py-2.5 rounded-xl text-sm font-medium border border-dashed border-border text-text-secondary hover:bg-bg-section transition-colors"
+            >
+              📦 Ordine per uso personale (carica Stock)
+            </button>
             <input
               type="text"
               placeholder="Cerca cliente..."
