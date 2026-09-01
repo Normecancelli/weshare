@@ -112,10 +112,12 @@ export async function POST(request: NextRequest) {
       .eq("partner_id", user.id);
 
     // Fetch all items from these orders and create group_items
+    // (esclude le righe soddisfatte da Stock: non vanno riordinate ad Amway)
     const { data: allItems } = await supabase
       .from("client_order_items")
       .select("id")
-      .in("order_id", order_ids);
+      .in("order_id", order_ids)
+      .neq("fonte", "magazzino");
 
     if (allItems && allItems.length > 0) {
       const groupItems = allItems.map((item) => ({
