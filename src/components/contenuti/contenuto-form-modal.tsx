@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Upload } from "lucide-react";
 import type { Contenuto, ContenutoMediaTipo, ContenutoTipo, TemaIcona } from "@/lib/types/contenuti";
 import { UPLOAD_LIMIT_MB } from "@/lib/types/contenuti";
 import { InlineMessage } from "@/components/ui/inline-message";
@@ -32,6 +33,8 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch(`/api/contenuti/temi?tipo=${tipo}`)
@@ -47,6 +50,7 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
 
   async function handleUpload(file: File) {
     setError("");
+    setFileName(file.name);
     setUploading(true);
     try {
       const urlRes = await fetch("/api/contenuti/upload-url", {
@@ -192,12 +196,25 @@ export function ContenutoFormModal({ tipo, contenuto, onSaved, onClose }: Props)
               {tipo === "presentazione" && (
                 <p className="text-xs text-text-gentle mb-2">Preferisci un link Drive/YouTube per file pesanti.</p>
               )}
+              <button
+                type="button"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border border-border hover:bg-bg-section transition-colors disabled:opacity-50"
+              >
+                <Upload size={14} strokeWidth={1.75} />
+                Scegli file
+              </button>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="video/mp4,video/webm,application/pdf,audio/mpeg,audio/mp4,audio/wav,audio/ogg"
                 onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-                className="text-sm"
+                className="hidden"
               />
+              {fileName && (
+                <p className="text-xs text-text-secondary mt-2 truncate">{fileName}</p>
+              )}
               {uploading && <p className="text-xs text-text-secondary mt-1">Caricamento...</p>}
               {filePath && !uploading && <p className="text-xs text-success mt-1">File caricato ✓</p>}
             </div>
