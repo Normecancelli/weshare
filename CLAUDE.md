@@ -11,7 +11,7 @@ Web app per la gestione delle attività del team Amway di **Alejerry (Alessandro
 
 ## Ambiente
 
-- **Repo**: https://github.com/Normecancelli/weshare — branch produzione `AMWAY.partner` (auto-redeploy ad ogni push)
+- **Repo**: https://github.com/Normecancelli/weshare — branch produzione `weshare` (auto-redeploy ad ogni push)
 - **Dominio**: https://weshare.growset.it (fallback `amway-partner-app.vercel.app`, vecchio `metodo.growset.it` ancora attivo in parallelo).
 - **Supabase project**: `ietxuhkkahnvcbchfspt` (region `eu-central-1`)
   - Dashboard: https://supabase.com/dashboard/project/ietxuhkkahnvcbchfspt

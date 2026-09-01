@@ -394,7 +394,7 @@ git add .github/workflows/event-reminders.yml vercel.json
 git commit -m "feat(reminder): trigger GitHub Actions ogni 15 minuti, rimuove cron nativo Vercel"
 ```
 
-- [ ] **Step 6: Dopo il merge/push su `AMWAY.partner`, test end-to-end in produzione**
+- [ ] **Step 6: Dopo il merge/push su `weshare`, test end-to-end in produzione**
 
 1. Verifica che il secret `CRON_SECRET` sia impostato: `gh secret list --repo Normecancelli/weshare` (mostra solo il nome, non il valore).
 2. Lancia il workflow manualmente: `gh workflow run event-reminders.yml --repo Normecancelli/weshare`.

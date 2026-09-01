@@ -17,7 +17,7 @@
 ## Prerequisites
 
 - Phase 1 is merged and deployed; `prospects` table exists (migration 007).
-- Working from repo root `/Users/alejerry/Desktop/Amway.Partner` on branch `AMWAY.partner`.
+- Working from repo root `/Users/alejerry/Desktop/Amway.Partner` on branch `weshare`.
 
 ---
 

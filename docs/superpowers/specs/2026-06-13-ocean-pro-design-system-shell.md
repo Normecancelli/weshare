@@ -185,7 +185,7 @@ Nessun test automatizzato — è un cambio puramente visivo.
 - [ ] `src/components/sidebar.tsx` con nuovi colori e 15 icone lucide.
 - [ ] `src/app/(dashboard)/layout.tsx` header mobile aggiornato.
 - [ ] Verifica visiva delle 4 pagine principali + login + mobile drawer.
-- [ ] Commit + push su `AMWAY.partner` → auto-deploy Vercel.
+- [ ] Commit + push su `weshare` → auto-deploy Vercel.
 - [ ] Screenshot dell'app live su `metodo.growset.it` per confronto.
 
 ## Prossimi passi (Fase 3, fuori scope qui)

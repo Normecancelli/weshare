@@ -2523,7 +2523,7 @@ Vai su Vercel → `amway-partner-app` → Settings → Environment Variables:
 - `CRON_SECRET` = il valore generato con `openssl rand -hex 32`
 - `RESEND_API_KEY` = la tua chiave Resend (se non già presente)
 
-- [ ] **Step 2: Push su branch AMWAY.partner**
+- [ ] **Step 2: Push su branch weshare**
 
 ```bash
 git push

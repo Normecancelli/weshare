@@ -581,10 +581,10 @@ Expected: `working tree clean`, gli ultimi 4 commit nuovi sono:
 - `feat(sidebar): apply Ocean Pro navy palette and lucide icons`
 - `feat(layout): apply Ocean Pro to mobile header`
 
-- [ ] **Step 2: Push su `AMWAY.partner`**
+- [ ] **Step 2: Push su `weshare`**
 
 ```bash
-git push origin AMWAY.partner
+git push origin weshare
 ```
 
 Expected: push accettato. Vercel auto-redeploy parte entro ~30s.
