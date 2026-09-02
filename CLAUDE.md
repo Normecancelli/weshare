@@ -137,7 +137,9 @@ Tabelle principali:
 
 ### Ricevuta ordine (PDF + email + WhatsApp)
 - Sezione "Ricevuta" su `/ordini-clienti/[id]` (qualunque stato ordine): **Scarica PDF** (`GET /api/client-orders/[id]/receipt`, `@react-pdf/renderer`, senza VP/provvigioni), **Invia email** (`POST .../receipt/send-email`, Resend, richiede email cliente in anagrafica), **WhatsApp** (scarica PDF + apre `wa.me` precompilato, allegato manuale — no invio automatico)
-- Fuori scope attuale: numerazione progressiva, storico invii, invio automatico alla conferma ordine — vedi TODO aperti
+- **Numerazione progressiva** per partner+anno (`numero_ricevuta`, es. `2026-001`), assegnata alla prima conferma ordine, persistente se torna in bozza e viene riconfermata, non retroattiva sugli ordini già confermati prima della migration (mantengono il vecchio codice derivato dall'UUID). Ordini mai confermati mostrano "BOZZA — non ancora confermato". Funzione atomica `next_receipt_number()` (migration `021_ricevute_numerazione_storico.sql`)
+- **Storico invii email** loggato in `receipt_email_log` (un insert per invio riuscito, non per tentativo — unico canale con conferma reale di invio, a differenza di PDF/WhatsApp)
+- Invio resta manuale per scelta (no auto-send alla conferma ordine) — decisione presa, non un gap
 
 ### Impostazioni
 - `/impostazioni`: foto profilo (bucket `avatars`, resize client-side 512×512), dati personali, profilo Amway (codice_amway read-only, qualifica, platino/diamante di riferimento), notifiche email, account (cambio password, logout)
@@ -210,13 +212,12 @@ CREATE TABLE event_attendees (
 
 ## TODO aperti
 
-_Aggiornato 2026-08-13 — la lista precedente era ferma a giugno e descriveva come "da fare" feature già costruite a luglio (Sessione B/C, Impostazioni, reminder). Tracciamento corrente via mappa Wayfinder su GitHub Issues, vedi `docs/agents/issue-tracker.md`._
+_Aggiornato 2026-09-02 — mappa Wayfinder "allineamento repo e documentazione" (issue #3) chiusa: numerazione ricevute + storico invii risultavano già implementati (migration 021, commit `5a2099b`), lista corretta di conseguenza._
 
-1. **Ricevute clienti — flusso oltre l'invio manuale**: da definire cosa manca al di là di download PDF / invio email manuale / WhatsApp precompilato (es. invio automatico alla conferma ordine, storico invii, numerazione progressiva). Ticket aperto sulla mappa Wayfinder.
-2. **Conferma pre-import listino** (~15 min): dialog "stai per sovrascrivere X prezzi e disattivare Y prodotti, mese rilevato: M". Endpoint preview-mode che parsa senza scrivere
-3. **Modifica articoli ordine già confermato**: oggi non si può cambiare items di un ordine confermato. Da decidere se aprirlo per stato `confermato` o solo `bozza`
-4. **Wa.me intelligenti templates**: oltre al pannello promemoria, aggiungere template per "follow-up cliente", "sollecito ordine programmato" (zero infra, manual click)
-5. **OpenWA companion desktop** (rimandato): app desktop opt-in che gira sul Mac del partner, parla con la nostra API per template+contatti, usa OpenWA in locale per inviare. Modello distribuito = rischio per-utente
+1. **Conferma pre-import listino** (~15 min): dialog "stai per sovrascrivere X prezzi e disattivare Y prodotti, mese rilevato: M". Endpoint preview-mode che parsa senza scrivere
+2. **Modifica articoli ordine già confermato**: oggi non si può cambiare items di un ordine confermato. Da decidere se aprirlo per stato `confermato` o solo `bozza`
+3. **Wa.me intelligenti templates**: oltre al pannello promemoria, aggiungere template per "follow-up cliente", "sollecito ordine programmato" (zero infra, manual click)
+4. **OpenWA companion desktop** (rimandato): app desktop opt-in che gira sul Mac del partner, parla con la nostra API per template+contatti, usa OpenWA in locale per inviare. Modello distribuito = rischio per-utente
 
 **Fuori scope / backlog separato**: debito lint pre-esistente (21 errori, in gran parte regola `react-hooks/set-state-in-effect` su codice funzionante) — non bloccante, da affrontare in un effort dedicato.
 
